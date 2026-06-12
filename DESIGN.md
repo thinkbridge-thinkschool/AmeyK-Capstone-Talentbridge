@@ -53,38 +53,167 @@ TalentBridge is a **modular monolith** built with **.NET 10 / ASP.NET Core 10** 
 
 ## Architecture
 
-### Pattern: Modular Monolith + Clean Architecture
+### Clean Architecture Layers
 
-```
-┌─────────────────────────────────────────────────────────┐
-│                   TalentBridge.API                      │
-│      Controllers │ Program.cs │ Resilience │ Swagger    │
-└──────────┬────────────────────────────────┬─────────────┘
-           │ depends on                     │
-┌──────────▼────────────────────────────────▼─────────────┐
-│              Infrastructure Layer (per module)           │
-│  EF Core DbContext │ Repositories │ Services │ Factories │
-└──────────┬─────────────────────────────────┬────────────┘
-           │ implements interfaces from      │
-┌──────────▼─────────────────────────────────▼────────────┐
-│              Application Layer (per module)              │
-│  CQRS Commands │ Queries │ Validators │ DTOs │ MediatR   │
-└──────────┬─────────────────────────────────┬────────────┘
-           │ uses                            │
-┌──────────▼─────────────────────────────────▼────────────┐
-│              Domain Layer (per module)                   │
-│  Aggregates │ Entities │ Events │ Value Objects │ Repos   │
-└─────────────────────────────────────────────────────────┘
-           │ depends on
-┌──────────▼──────────────┐
-│   TalentBridge.Shared   │
-│  AggregateRoot │ Result  │
-│  OutboxMessage │ IDomain │
-│  Event │ ICurrentUser   │
-└─────────────────────────┘
+```mermaid
+graph TD
+    API["🌐 TalentBridge.API<br/>Controllers · Program.cs · Polly · Swagger"]
+    INFRA["⚙️ Infrastructure Layer (per module)<br/>EF Core DbContext · Repositories · Services · Factories"]
+    APP["📋 Application Layer (per module)<br/>CQRS Commands · Queries · Validators · DTOs · MediatR"]
+    DOMAIN["🏛️ Domain Layer (per module)<br/>Aggregates · Entities · Events · Value Objects · Repos"]
+    SHARED["🔧 TalentBridge.Shared<br/>AggregateRoot · Result&lt;T&gt; · OutboxMessage · IDomainEvent · ICurrentUserService"]
+
+    API --> INFRA
+    INFRA --> APP
+    APP --> DOMAIN
+    DOMAIN --> SHARED
+
+    style API fill:#2b6cb0,stroke:#1a365d,color:#fff
+    style INFRA fill:#2f855a,stroke:#1c4532,color:#fff
+    style APP fill:#b7791f,stroke:#744210,color:#fff
+    style DOMAIN fill:#c53030,stroke:#742a2a,color:#fff
+    style SHARED fill:#553c9a,stroke:#322659,color:#fff
 ```
 
 **Dependency rule**: inner layers never reference outer layers. Infrastructure implements interfaces defined in Application.
+
+---
+
+### Module Dependency Graph
+
+```mermaid
+graph LR
+    API["TalentBridge.API<br/>(composition root)"]
+
+    subgraph Identity
+        ID_INF["Identity.Infrastructure"]
+        ID_APP["Identity.Application"]
+        ID_DOM["Identity.Domain"]
+    end
+
+    subgraph Jobs
+        JB_INF["Jobs.Infrastructure"]
+        JB_APP["Jobs.Application"]
+        JB_DOM["Jobs.Domain"]
+    end
+
+    subgraph Applications
+        AP_INF["Applications.Infrastructure"]
+        AP_APP["Applications.Application"]
+        AP_DOM["Applications.Domain"]
+    end
+
+    subgraph Notifications
+        NT_INF["Notifications.Infrastructure"]
+    end
+
+    SHARED["TalentBridge.Shared"]
+
+    API --> ID_INF
+    API --> JB_INF
+    API --> AP_INF
+    API --> NT_INF
+
+    ID_INF --> ID_APP --> ID_DOM --> SHARED
+    JB_INF --> JB_APP --> JB_DOM --> SHARED
+    AP_INF --> AP_APP --> AP_DOM --> SHARED
+    NT_INF --> SHARED
+
+    style API fill:#2b6cb0,stroke:#1a365d,color:#fff
+    style SHARED fill:#553c9a,stroke:#322659,color:#fff
+```
+
+---
+
+### Aggregate State Machines
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Draft : Job.Create()
+    Draft --> Active : Publish() ✅
+    Draft --> Draft : Update()
+    Active --> Closed : Close() ✅
+    Closed --> [*]
+
+    note right of Draft
+        Raises JobCreatedEvent
+    end note
+    note right of Active
+        Raises JobPublishedEvent
+    end note
+    note right of Closed
+        Raises JobClosedEvent
+    end note
+```
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> Submitted : Apply()
+    Submitted --> UnderReview : MoveToReview()
+    UnderReview --> Accepted : Accept()
+    UnderReview --> Rejected : Reject(reason)
+    Submitted --> Rejected : Reject(reason)
+    Accepted --> [*]
+    Rejected --> [*]
+```
+
+---
+
+### Async Flow — Apply for a Job (Outbox Pattern)
+
+```mermaid
+sequenceDiagram
+    participant C as Candidate
+    participant API as Applications API
+    participant DB as ApplicationsDb
+    participant OBX as OutboxMessages table
+    participant RELAY as OutboxRelayService
+    participant SB as Azure Service Bus
+    participant NOTIF as NotificationsConsumer
+
+    C->>API: POST /api/applications
+    API->>DB: Begin transaction
+    API->>DB: INSERT JobApplication
+    API->>OBX: INSERT OutboxMessage (ApplicationSubmittedEvent)
+    API->>DB: Commit (atomic)
+    API-->>C: 201 Created
+
+    loop every 5 seconds
+        RELAY->>OBX: SELECT unprocessed messages
+        RELAY->>SB: Publish to "talentbridge-events" topic
+        RELAY->>OBX: SET ProcessedAt = UtcNow
+    end
+
+    SB-->>NOTIF: Deliver message (at-least-once)
+    NOTIF->>NOTIF: Check idempotency guard
+    NOTIF->>NOTIF: Handle ApplicationSubmitted → send notification
+    NOTIF->>SB: Complete message
+```
+
+---
+
+### Polly Resilience Pipeline
+
+```mermaid
+graph LR
+    REQ["Incoming<br/>HTTP Request"]
+    BH["ConcurrencyLimiter<br/>permitLimit: 10<br/>queueLimit: 20"]
+    CB["CircuitBreaker<br/>5 failures / 30s<br/>→ 30s break"]
+    RT["Retry<br/>3× exponential<br/>backoff from 1s"]
+    TO["Timeout<br/>5s per attempt"]
+    SVC["Upstream<br/>Service"]
+
+    REQ --> BH --> CB --> RT --> TO --> SVC
+
+    style REQ fill:#4a5568,color:#fff
+    style BH fill:#b7791f,color:#fff
+    style CB fill:#c53030,color:#fff
+    style RT fill:#2f855a,color:#fff
+    style TO fill:#553c9a,color:#fff
+    style SVC fill:#2b6cb0,color:#fff
+```
 
 ---
 
