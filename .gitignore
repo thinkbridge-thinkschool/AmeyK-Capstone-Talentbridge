@@ -1,0 +1,44 @@
+## .NET / C# gitignore
+
+# Build output
+bin/
+obj/
+
+# User-specific files
+*.user
+*.suo
+*.userprefs
+.vs/
+
+# NuGet
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+project.lock.json
+
+# Secrets / env
+appsettings.*.json
+!appsettings.json
+!appsettings.Development.json
+*.pfx
+*.key
+
+# Rider / JetBrains
+.idea/
+*.DotSettings.user
+
+# VS Code
+.vscode/settings.json
+.vscode/launch.json
+
+# macOS
+.DS_Store
+
+# Test results
+TestResults/
+coverage/
+*.trx
+
+# Publish output
+publish/

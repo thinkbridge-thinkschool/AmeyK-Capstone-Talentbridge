@@ -1,0 +1,40 @@
+<Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/API/">
+    <Project Path="src/API/TalentBridge.API/TalentBridge.API.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/" />
+  <Folder Name="/src/Modules/Applications/">
+    <Project Path="src/Modules/Applications/TalentBridge.Applications.Application/TalentBridge.Applications.Application.csproj" />
+    <Project Path="src/Modules/Applications/TalentBridge.Applications.Domain/TalentBridge.Applications.Domain.csproj" />
+    <Project Path="src/Modules/Applications/TalentBridge.Applications.Infrastructure/TalentBridge.Applications.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Companies/">
+    <Project Path="src/Modules/Companies/TalentBridge.Companies.Application/TalentBridge.Companies.Application.csproj" />
+    <Project Path="src/Modules/Companies/TalentBridge.Companies.Domain/TalentBridge.Companies.Domain.csproj" />
+    <Project Path="src/Modules/Companies/TalentBridge.Companies.Infrastructure/TalentBridge.Companies.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Identity/">
+    <Project Path="src/Modules/Identity/TalentBridge.Identity.Application/TalentBridge.Identity.Application.csproj" />
+    <Project Path="src/Modules/Identity/TalentBridge.Identity.Domain/TalentBridge.Identity.Domain.csproj" />
+    <Project Path="src/Modules/Identity/TalentBridge.Identity.Infrastructure/TalentBridge.Identity.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Jobs/">
+    <Project Path="src/Modules/Jobs/TalentBridge.Jobs.Application/TalentBridge.Jobs.Application.csproj" />
+    <Project Path="src/Modules/Jobs/TalentBridge.Jobs.Domain/TalentBridge.Jobs.Domain.csproj" />
+    <Project Path="src/Modules/Jobs/TalentBridge.Jobs.Infrastructure/TalentBridge.Jobs.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Modules/Notifications/">
+    <Project Path="src/Modules/Notifications/TalentBridge.Notifications.Application/TalentBridge.Notifications.Application.csproj" />
+    <Project Path="src/Modules/Notifications/TalentBridge.Notifications.Domain/TalentBridge.Notifications.Domain.csproj" />
+    <Project Path="src/Modules/Notifications/TalentBridge.Notifications.Infrastructure/TalentBridge.Notifications.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Shared/TalentBridge.Shared/TalentBridge.Shared.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/TalentBridge.Applications.Domain.Tests/TalentBridge.Applications.Domain.Tests.csproj" />
+    <Project Path="tests/TalentBridge.Identity.Domain.Tests/TalentBridge.Identity.Domain.Tests.csproj" />
+    <Project Path="tests/TalentBridge.Jobs.Domain.Tests/TalentBridge.Jobs.Domain.Tests.csproj" />
+  </Folder>
+</Solution>
