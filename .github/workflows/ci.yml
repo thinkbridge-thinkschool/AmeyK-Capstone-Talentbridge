@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    name: Build & Test (.NET 10)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.x'
+
+      - name: Restore dependencies
+        run: dotnet restore TalentBridge.slnx
+
+      - name: Build (Release)
+        run: dotnet build TalentBridge.slnx --no-restore --configuration Release
+
+      - name: Run tests
+        run: dotnet test TalentBridge.slnx --no-build --configuration Release --verbosity normal --logger "console;verbosity=detailed"
