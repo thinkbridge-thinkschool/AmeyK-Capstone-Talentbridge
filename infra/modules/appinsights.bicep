@@ -20,3 +20,4 @@ output id string = appInsights.id
 output name string = appInsights.name
 output connectionString string = appInsights.properties.ConnectionString
 output instrumentationKey string = appInsights.properties.InstrumentationKey
+

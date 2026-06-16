@@ -23,24 +23,30 @@ public class ApplyCommandHandler : IRequestHandler<ApplyCommand, ApplyResult>
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            var application = JobApplication.Create(
-                request.JobId,
+            var result = JobApplication.Create(
                 request.CandidateId,
+                request.JobId,
                 request.CoverLetter,
                 request.ResumeUrl);
+
+            if (result.IsFailure)
+                throw new InvalidOperationException(result.Error);
+
+            var application = result.Value!;
 
             await _dbContext.JobApplications.AddAsync(application, cancellationToken);
 
             var outboxMessage = new OutboxMessage
             {
-                EventType = "ApplicationSubmitted",
+                Type = "ApplicationSubmitted",
                 Payload = JsonSerializer.Serialize(new
                 {
                     ApplicationId = application.Id,
                     request.JobId,
                     request.CandidateId,
-                    application.AppliedAt
-                })
+                    application.SubmittedAtUtc
+                }),
+                OccurredOnUtc = application.SubmittedAtUtc
             };
 
             await _dbContext.OutboxMessages.AddAsync(outboxMessage, cancellationToken);

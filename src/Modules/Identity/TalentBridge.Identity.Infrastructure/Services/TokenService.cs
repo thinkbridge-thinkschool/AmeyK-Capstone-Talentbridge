@@ -5,7 +5,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using TalentBridge.Identity.Application.Interfaces;
 using TalentBridge.Identity.Domain.Entities;
-using TalentBridge.Identity.Domain.Enums;
 
 namespace TalentBridge.Identity.Infrastructure.Services;
 
@@ -28,12 +27,8 @@ public class TokenService : ITokenService
         {
             new(ClaimTypes.NameIdentifier, user.Id.ToString()),
             new(ClaimTypes.Email, user.Email),
-            new(ClaimTypes.Role, user.Role.ToString()),
-            new("firstName", user.FirstName)
+            new(ClaimTypes.Role, user.Role.ToString())
         };
-
-        if (user.Role == UserRole.CompanyHR && user.CompanyId.HasValue)
-            claims.Add(new("companyId", user.CompanyId.Value.ToString()));
 
         var token = new JwtSecurityToken(
             issuer: issuer,

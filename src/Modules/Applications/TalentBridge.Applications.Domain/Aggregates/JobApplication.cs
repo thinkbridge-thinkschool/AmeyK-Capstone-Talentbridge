@@ -1,68 +1,97 @@
 using TalentBridge.Applications.Domain.Enums;
 using TalentBridge.Applications.Domain.Events;
+using TalentBridge.Shared.Common;
 using TalentBridge.Shared.Domain;
 
 namespace TalentBridge.Applications.Domain.Aggregates;
 
 public class JobApplication : AggregateRoot
 {
-    public Guid JobId { get; private set; }
     public Guid CandidateId { get; private set; }
+    public Guid JobId { get; private set; }
     public string CoverLetter { get; private set; } = string.Empty;
     public string ResumeUrl { get; private set; } = string.Empty;
     public ApplicationStatus Status { get; private set; }
-    public DateTime AppliedAt { get; private set; }
-    public string? RejectionReason { get; private set; }
+    public DateTime SubmittedAtUtc { get; private set; }
+    public DateTime LastUpdatedAtUtc { get; private set; }
+    public Guid? ReviewedByHRId { get; private set; }
+    public string? ReviewNotes { get; private set; }
 
     private JobApplication() { }
 
-    public static JobApplication Create(Guid jobId, Guid candidateId, string coverLetter, string resumeUrl)
+    public static Result<JobApplication> Create(Guid candidateId, Guid jobId, string coverLetter, string resumeUrl)
     {
-        if (jobId == Guid.Empty) throw new ArgumentException("JobId cannot be empty.", nameof(jobId));
-        if (candidateId == Guid.Empty) throw new ArgumentException("CandidateId cannot be empty.", nameof(candidateId));
-        if (string.IsNullOrWhiteSpace(coverLetter)) throw new ArgumentException("CoverLetter cannot be empty.", nameof(coverLetter));
-        if (string.IsNullOrWhiteSpace(resumeUrl)) throw new ArgumentException("ResumeUrl cannot be empty.", nameof(resumeUrl));
+        if (string.IsNullOrWhiteSpace(coverLetter)) return Result<JobApplication>.Failure("Cover letter is required.");
+        if (string.IsNullOrWhiteSpace(resumeUrl)) return Result<JobApplication>.Failure("Resume URL is required.");
 
         var application = new JobApplication
         {
-            JobId = jobId,
             CandidateId = candidateId,
+            JobId = jobId,
             CoverLetter = coverLetter,
             ResumeUrl = resumeUrl,
             Status = ApplicationStatus.Submitted,
-            AppliedAt = DateTime.UtcNow
+            SubmittedAtUtc = DateTime.UtcNow,
+            LastUpdatedAtUtc = DateTime.UtcNow
         };
 
-        application.AddDomainEvent(new ApplicationSubmittedEvent(application.Id, jobId, candidateId));
-
-        return application;
+        application.RaiseDomainEvent(new ApplicationSubmittedEvent(
+            application.Id, candidateId, jobId, coverLetter, resumeUrl, DateTime.UtcNow));
+        return Result<JobApplication>.Success(application);
     }
 
-    public void MoveToReview()
+    public Result StartReview(Guid hrId)
     {
-        if (Status != ApplicationStatus.Submitted)
-            throw new InvalidOperationException("Only Submitted applications can be moved to review.");
-
+        if (Status != ApplicationStatus.Submitted) return Result.Failure("Only Submitted applications can move to review.");
+        var old = Status;
         Status = ApplicationStatus.UnderReview;
-        AddDomainEvent(new ApplicationStatusChangedEvent(Id, CandidateId, Status));
+        ReviewedByHRId = hrId;
+        LastUpdatedAtUtc = DateTime.UtcNow;
+        RaiseDomainEvent(new ApplicationStatusChangedEvent(Id, old, Status, DateTime.UtcNow));
+        return Result.Success();
     }
 
-    public void Accept()
+    public Result Shortlist(Guid hrId)
     {
-        if (Status != ApplicationStatus.UnderReview)
-            throw new InvalidOperationException("Only applications UnderReview can be accepted.");
+        if (Status != ApplicationStatus.UnderReview) return Result.Failure("Only UnderReview applications can be shortlisted.");
+        var old = Status;
+        Status = ApplicationStatus.Shortlisted;
+        ReviewedByHRId = hrId;
+        LastUpdatedAtUtc = DateTime.UtcNow;
+        RaiseDomainEvent(new ApplicationStatusChangedEvent(Id, old, Status, DateTime.UtcNow));
+        return Result.Success();
+    }
 
+    public Result Accept(Guid hrId)
+    {
+        if (Status != ApplicationStatus.Shortlisted) return Result.Failure("Only Shortlisted applications can be accepted.");
         Status = ApplicationStatus.Accepted;
-        AddDomainEvent(new ApplicationAcceptedEvent(Id, CandidateId, JobId));
+        ReviewedByHRId = hrId;
+        LastUpdatedAtUtc = DateTime.UtcNow;
+        RaiseDomainEvent(new ApplicationAcceptedEvent(Id, CandidateId, JobId, DateTime.UtcNow));
+        return Result.Success();
     }
 
-    public void Reject(string reason)
+    public Result Reject(Guid hrId, string notes)
     {
-        if (string.IsNullOrWhiteSpace(reason))
-            throw new ArgumentException("Rejection reason cannot be empty.", nameof(reason));
-
+        if (Status is ApplicationStatus.Accepted or ApplicationStatus.Withdrawn)
+            return Result.Failure("Cannot reject an Accepted or Withdrawn application.");
+        var old = Status;
         Status = ApplicationStatus.Rejected;
-        RejectionReason = reason;
-        AddDomainEvent(new ApplicationRejectedEvent(Id, CandidateId, reason));
+        ReviewedByHRId = hrId;
+        ReviewNotes = notes;
+        LastUpdatedAtUtc = DateTime.UtcNow;
+        RaiseDomainEvent(new ApplicationStatusChangedEvent(Id, old, Status, DateTime.UtcNow));
+        return Result.Success();
+    }
+
+    public Result Withdraw()
+    {
+        if (Status is ApplicationStatus.Accepted or ApplicationStatus.Rejected)
+            return Result.Failure("Cannot withdraw an Accepted or Rejected application.");
+        Status = ApplicationStatus.Withdrawn;
+        LastUpdatedAtUtc = DateTime.UtcNow;
+        RaiseDomainEvent(new ApplicationWithdrawnEvent(Id, DateTime.UtcNow));
+        return Result.Success();
     }
 }

@@ -27,6 +27,7 @@ public class ApplicationsDbContext : DbContext, IApplicationsDbContext
             e.Property(a => a.Status).HasConversion<string>();
             e.HasIndex(a => a.JobId);
             e.HasIndex(a => a.CandidateId);
+            e.Ignore(a => a.DomainEvents);
         });
 
         modelBuilder.Entity<OutboxMessage>(e =>

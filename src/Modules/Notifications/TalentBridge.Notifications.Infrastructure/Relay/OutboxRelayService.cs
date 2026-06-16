@@ -48,7 +48,7 @@ public class OutboxRelayService : BackgroundService
 
     private async Task ProcessPendingMessagesAsync(CancellationToken ct)
     {
-        var pending = await _outboxRepository.GetPendingAsync(maxRetries: 5, ct);
+        var pending = await _outboxRepository.GetPendingAsync(ct);
 
         if (pending.Count == 0) return;
 
@@ -63,7 +63,7 @@ public class OutboxRelayService : BackgroundService
                 var sbMessage = new ServiceBusMessage(message.Payload)
                 {
                     MessageId = message.Id.ToString(),
-                    Subject = message.EventType
+                    Subject = message.Type
                 };
 
                 await sender.SendMessageAsync(sbMessage, ct);
@@ -74,18 +74,16 @@ public class OutboxRelayService : BackgroundService
                     throw new Exception("Simulated crash after publish");
                 }
 
-                message.ProcessedAt = DateTime.UtcNow;
+                message.ProcessedOnUtc = DateTime.UtcNow;
                 await _outboxRepository.SaveAsync(message, ct);
 
-                _logger.LogInformation("[OutboxRelay] Relayed outbox message {Id} ({EventType})", message.Id, message.EventType);
+                _logger.LogInformation("[OutboxRelay] Relayed outbox message {Id} ({Type})", message.Id, message.Type);
             }
             catch (Exception ex) when (!SimulateCrash || ex.Message != "Simulated crash after publish")
             {
-                message.RetryCount++;
-                message.Error = ex.Message;
                 await _outboxRepository.SaveAsync(message, ct);
 
-                _logger.LogError(ex, "[OutboxRelay] Failed to relay outbox message {Id} — retry count: {RetryCount}", message.Id, message.RetryCount);
+                _logger.LogError(ex, "[OutboxRelay] Failed to relay outbox message {Id}", message.Id);
             }
         }
     }

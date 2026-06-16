@@ -38,12 +38,11 @@ public class JobsController : ControllerBase
     public async Task<IActionResult> Search(
         [FromQuery] string? keyword,
         [FromQuery] string? location,
-        [FromQuery] string? type,
         [FromQuery] int page = 1,
         [FromQuery] int size = 20,
         CancellationToken ct = default)
     {
-        var result = await _mediator.Send(new SearchJobsQuery(keyword, location, type, page, size), ct);
+        var result = await _mediator.Send(new SearchJobsQuery(keyword, location, page, size), ct);
         return Ok(result);
     }
 

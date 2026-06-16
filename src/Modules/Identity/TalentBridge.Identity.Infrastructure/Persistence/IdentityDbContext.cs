@@ -21,8 +21,7 @@ public class IdentityDbContext : DbContext, IIdentityDbContext
             e.HasIndex(u => u.Email).IsUnique();
             e.Property(u => u.PasswordHash).IsRequired();
             e.Property(u => u.Role).HasConversion<string>();
-            e.Property(u => u.FirstName).IsRequired().HasMaxLength(100);
-            e.Property(u => u.LastName).IsRequired().HasMaxLength(100);
+            e.Ignore(u => u.DomainEvents);
         });
     }
 }

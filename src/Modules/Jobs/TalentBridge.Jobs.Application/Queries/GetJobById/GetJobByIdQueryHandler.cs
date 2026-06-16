@@ -34,16 +34,16 @@ public class GetJobByIdQueryHandler : IRequestHandler<GetJobByIdQuery, JobDto?>
                 return new JobDto(
                     job.Id,
                     job.CompanyId,
+                    job.PostedByHRId,
                     job.Title,
                     job.Description,
                     job.Location,
                     job.SalaryMin,
                     job.SalaryMax,
                     job.Status,
-                    job.Type,
-                    job.ClosingDate,
-                    job.CreatedAt,
-                    [.. job.RequiredSkills]);
+                    job.CreatedAtUtc,
+                    job.PublishedAtUtc,
+                    job.ExpiresAtUtc);
             },
             new HybridCacheEntryOptions
             {

@@ -1,4 +1,4 @@
-name: Deploy
+name: TalentBridge — Full Stack Deploy
 
 on:
   workflow_dispatch:
@@ -8,57 +8,116 @@ on:
         required: true
         default: 'dev'
         type: choice
-        options: [ dev, prod ]
+        options: [dev, prod]
+
+env:
+  RG: talentbridge-rg-amey
+  ACR_NAME: talentbridgeacramey
+  APP_SERVICE_NAME: talentbridge-api-amey
+  SWA_NAME: talentbridge-swa-amey
 
 jobs:
-  # ── Job 1: Backend → Azure Container App ────────────────────────────────────
-  deploy-backend:
-    name: Build & Deploy API (Container App)
+  # ── 1. Infrastructure — Azure Deployment Stack ───────────────────────────────
+  deploy-infra:
+    name: Provision Infrastructure (Deployment Stack)
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    environment: ${{ github.event.inputs.environment }}
+    outputs:
+      swa_url: ${{ steps.stack-out.outputs.swa_url }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ secrets.REGISTRY_LOGIN_SERVER }}
-          username: ${{ secrets.REGISTRY_USERNAME }}
-          password: ${{ secrets.REGISTRY_PASSWORD }}
+      - name: Deploy Deployment Stack
+        run: |
+          az stack group create \
+            --name talentbridge-stack-${{ github.event.inputs.environment }} \
+            --resource-group $RG \
+            --template-file infra/main.bicep \
+            --parameters infra/parameters/${{ github.event.inputs.environment }}.bicepparam \
+            --action-on-unmanage deleteAll \
+            --deny-settings-mode none \
+            --yes
 
-      - name: Build & Push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: Dockerfile
-          push: true
-          tags: |
-            ${{ secrets.REGISTRY_LOGIN_SERVER }}/talentbridge-api:latest
-            ${{ secrets.REGISTRY_LOGIN_SERVER }}/talentbridge-api:${{ github.sha }}
+      - name: Get stack outputs
+        id: stack-out
+        run: |
+          SWA_URL=$(az stack group show \
+            --name talentbridge-stack-${{ github.event.inputs.environment }} \
+            --resource-group $RG \
+            --query "outputs.staticWebAppUrl.value" -o tsv)
+          echo "swa_url=$SWA_URL" >> $GITHUB_OUTPUT
+          echo "Static Web App: $SWA_URL"
 
-      - name: Deploy to Container App
-        uses: azure/container-apps-deploy-action@v1
-        with:
-          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
-          containerAppName: ${{ secrets.CONTAINER_APP_NAME }}
-          imageToDeploy: ${{ secrets.REGISTRY_LOGIN_SERVER }}/talentbridge-api:${{ github.sha }}
-
-  # ── Job 2: Frontend → Azure Static Web App ──────────────────────────────────
-  deploy-frontend:
-    name: Deploy Frontend (Static Web App)
+  # ── 2. Backend — Build Docker image → ACR → App Service ─────────────────────
+  deploy-backend:
+    name: Build & Deploy API (App Service)
     runs-on: ubuntu-latest
-    environment: ${{ inputs.environment }}
+    needs: deploy-infra
+    environment: ${{ github.event.inputs.environment }}
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Build & push image to ACR
+        run: |
+          az acr build \
+            --registry $ACR_NAME \
+            --image talentbridge-api:${{ github.sha }} \
+            --image talentbridge-api:latest \
+            .
+
+      - name: Deploy image to App Service
+        run: |
+          ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
+          az webapp config container set \
+            --name $APP_SERVICE_NAME \
+            --resource-group $RG \
+            --docker-custom-image-name $ACR_NAME.azurecr.io/talentbridge-api:${{ github.sha }} \
+            --docker-registry-server-url https://$ACR_NAME.azurecr.io \
+            --docker-registry-server-user $ACR_NAME \
+            --docker-registry-server-password "$ACR_PASSWORD"
+
+      - name: Restart App Service
+        run: az webapp restart --name $APP_SERVICE_NAME --resource-group $RG
+
+      - name: Show backend URL
+        run: |
+          URL=$(az webapp show --name $APP_SERVICE_NAME --resource-group $RG --query "defaultHostName" -o tsv)
+          echo "Backend live at: https://$URL"
+
+  # ── 3. Frontend — Build Angular → Azure Static Web App ───────────────────────
+  deploy-frontend:
+    name: Build Angular & Deploy Frontend (SWA)
+    runs-on: ubuntu-latest
+    needs: deploy-infra
+    environment: ${{ github.event.inputs.environment }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build Angular (production)
+        working-directory: frontend
+        run: npm run build:prod
 
       - name: Deploy to Static Web App
         uses: Azure/static-web-apps-deploy@v1
@@ -67,4 +126,23 @@ jobs:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: upload
           app_location: frontend
-          output_location: ''
+          output_location: dist/talentbridge-angular/browser
+
+  # ── 4. Summary ───────────────────────────────────────────────────────────────
+  summary:
+    name: Deployment Summary
+    runs-on: ubuntu-latest
+    needs: [deploy-infra, deploy-backend, deploy-frontend]
+    if: always()
+
+    steps:
+      - name: Print URLs
+        run: |
+          echo "======================================"
+          echo "  TalentBridge Deployment Complete"
+          echo "======================================"
+          echo "  Environment : ${{ github.event.inputs.environment }}"
+          echo "  Stack       : talentbridge-stack-${{ github.event.inputs.environment }}"
+          echo "  Frontend    : ${{ needs.deploy-infra.outputs.swa_url }}"
+          echo "  Backend     : https://talentbridge-api-amey.azurewebsites.net"
+          echo "======================================"

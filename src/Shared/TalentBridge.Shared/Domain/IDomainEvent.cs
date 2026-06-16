@@ -1,7 +1,9 @@
+using MediatR;
+
 namespace TalentBridge.Shared.Domain;
 
-public interface IDomainEvent
+public interface IDomainEvent : INotification
 {
     Guid EventId { get; }
-    DateTime OccurredAt { get; }
+    DateTime OccurredOnUtc { get; }
 }

@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using TalentBridge.Jobs.Domain.Aggregates;
 using TalentBridge.Shared.Outbox;
 
@@ -22,19 +21,9 @@ public class JobsDbContext : DbContext
             e.Property(j => j.SalaryMin).HasPrecision(18, 2);
             e.Property(j => j.SalaryMax).HasPrecision(18, 2);
             e.Property(j => j.Status).HasConversion<string>();
-            e.Property(j => j.Type).HasConversion<string>();
             e.HasIndex(j => j.Status);
             e.HasIndex(j => j.CompanyId);
-
-            e.Ignore(j => j.RequiredSkills);
-
-            e.Property<List<string>>("_requiredSkills")
-                .HasColumnName("RequiredSkills")
-                .UsePropertyAccessMode(PropertyAccessMode.Field)
-                .HasConversion(
-                    v => JsonSerializer.Serialize(v, (JsonSerializerOptions?)null),
-                    v => JsonSerializer.Deserialize<List<string>>(v, (JsonSerializerOptions?)null) ?? new List<string>())
-                .HasColumnType("nvarchar(max)");
+            e.Ignore(j => j.DomainEvents);
         });
 
         modelBuilder.Entity<OutboxMessage>(e =>

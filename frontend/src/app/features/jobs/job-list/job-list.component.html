@@ -1,0 +1,172 @@
+<div class="min-h-screen bg-gray-50">
+
+  <!-- Hero search banner -->
+  <div class="bg-gradient-to-r from-slate-800 to-slate-900 py-12 px-4">
+    <div class="max-w-4xl mx-auto text-center">
+      <h1 class="text-4xl font-bold text-white mb-2">Find Your Next Opportunity</h1>
+      <p class="text-slate-400 mb-8">Browse {{ totalCount }} job listings on TalentBridge</p>
+
+      <form [formGroup]="searchForm" class="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto">
+        <div class="relative flex-1">
+          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+          </svg>
+          <input
+            formControlName="keyword"
+            type="text"
+            placeholder="Job title, keyword..."
+            class="w-full pl-11 pr-4 py-3.5 rounded-xl text-gray-900 bg-white border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-lg"
+          />
+        </div>
+        <div class="relative flex-1">
+          <svg class="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          <input
+            formControlName="location"
+            type="text"
+            placeholder="Location..."
+            class="w-full pl-11 pr-4 py-3.5 rounded-xl text-gray-900 bg-white border-0 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm shadow-lg"
+          />
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
+    <!-- Toolbar -->
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+      <div>
+        <h2 class="text-lg font-semibold text-gray-900">
+          <span *ngIf="!loading">{{ totalCount }} jobs found</span>
+          <span *ngIf="loading" class="text-gray-400">Searching...</span>
+        </h2>
+        <button *ngIf="searchForm.value.keyword || searchForm.value.location"
+          (click)="clearSearch()"
+          class="text-sm text-blue-600 hover:text-blue-800 mt-1">
+          Clear filters &times;
+        </button>
+      </div>
+
+      <a *ngIf="canPostJob"
+        routerLink="/jobs/new"
+        class="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+        </svg>
+        Post New Job
+      </a>
+    </div>
+
+    <!-- Loading skeleton -->
+    <div *ngIf="loading" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <div *ngFor="let i of skeletonItems" class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 animate-pulse">
+        <div class="h-4 bg-gray-200 rounded w-3/4 mb-3"></div>
+        <div class="h-3 bg-gray-200 rounded w-1/2 mb-2"></div>
+        <div class="h-3 bg-gray-200 rounded w-2/3 mb-5"></div>
+        <div class="h-8 bg-gray-200 rounded-lg"></div>
+      </div>
+    </div>
+
+    <!-- Error state -->
+    <div *ngIf="errorMessage && !loading" class="text-center py-16">
+      <svg class="w-16 h-16 text-red-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      </svg>
+      <p class="text-gray-600 font-medium">{{ errorMessage }}</p>
+      <button (click)="loadJobs()" class="mt-4 text-blue-600 hover:text-blue-800 font-medium">Try again</button>
+    </div>
+
+    <!-- Empty state -->
+    <div *ngIf="!loading && !errorMessage && jobs.length === 0" class="text-center py-16">
+      <svg class="w-20 h-20 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+      </svg>
+      <h3 class="text-xl font-semibold text-gray-700 mb-2">No jobs found</h3>
+      <p class="text-gray-400">Try adjusting your search criteria</p>
+    </div>
+
+    <!-- Job grid -->
+    <div *ngIf="!loading && jobs.length > 0" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <div *ngFor="let job of jobs"
+        class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all group">
+
+        <!-- Header -->
+        <div class="flex items-start justify-between mb-3">
+          <div class="flex-1 min-w-0">
+            <h3 class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors text-base leading-snug truncate pr-2">
+              {{ job.title }}
+            </h3>
+          </div>
+          <app-status-badge [status]="job.status"></app-status-badge>
+        </div>
+
+        <!-- Location -->
+        <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-2">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+          </svg>
+          {{ job.location }}
+        </div>
+
+        <!-- Salary -->
+        <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-4">
+          <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+          </svg>
+          {{ formatSalary(job.salaryMin, job.salaryMax) }}/yr
+        </div>
+
+        <!-- Description snippet -->
+        <p class="text-gray-500 text-sm mb-5 line-clamp-2 leading-relaxed">
+          {{ job.description }}
+        </p>
+
+        <!-- Footer -->
+        <div class="flex items-center justify-between">
+          <span class="text-xs text-gray-400">{{ formatDate(job.createdAtUtc) }}</span>
+          <a [routerLink]="['/jobs', job.id]"
+            class="inline-flex items-center gap-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
+            View
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="totalPages > 1 && !loading" class="mt-10 flex items-center justify-center gap-2">
+      <button
+        (click)="goToPage(currentPage - 1)"
+        [disabled]="currentPage === 1"
+        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">
+        &larr; Prev
+      </button>
+
+      <button *ngFor="let page of pages"
+        (click)="goToPage(page)"
+        [class]="'px-4 py-2 rounded-lg border text-sm font-medium transition-colors ' +
+          (page === currentPage
+            ? 'bg-blue-600 text-white border-blue-600'
+            : 'border-gray-300 text-gray-600 hover:bg-gray-100')">
+        {{ page }}
+      </button>
+
+      <button
+        (click)="goToPage(currentPage + 1)"
+        [disabled]="currentPage === totalPages"
+        class="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">
+        Next &rarr;
+      </button>
+    </div>
+
+    <p *ngIf="!loading && totalCount > 0" class="text-center text-sm text-gray-400 mt-4">
+      Showing {{ (currentPage - 1) * pageSize + 1 }}–{{ currentPage * pageSize > totalCount ? totalCount : currentPage * pageSize }} of {{ totalCount }} jobs
+    </p>
+  </div>
+</div>

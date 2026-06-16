@@ -21,12 +21,11 @@ public class JobRepository : IJobRepository
             .Take(size)
             .ToListAsync(ct);
 
-    public Task<List<Job>> SearchAsync(string keyword, string? location, JobType? type, CancellationToken ct) =>
+    public Task<List<Job>> SearchAsync(string keyword, string? location, CancellationToken ct) =>
         _context.Jobs
             .Where(j => j.Status == JobStatus.Active &&
                 (string.IsNullOrEmpty(keyword) || j.Title.Contains(keyword) || j.Description.Contains(keyword)) &&
-                (location == null || j.Location == location) &&
-                (type == null || j.Type == type))
+                (location == null || j.Location == location))
             .ToListAsync(ct);
 
     public Task<List<Job>> GetByCompanyAsync(Guid companyId, CancellationToken ct) =>

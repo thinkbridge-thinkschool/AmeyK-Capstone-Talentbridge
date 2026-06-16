@@ -1,0 +1,21 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "env": { "value": "${AZURE_ENV_NAME}" },
+    "location": { "value": "${AZURE_LOCATION}" },
+    "suffix": { "value": "amey" },
+    "sqlAdminLogin": { "value": "sqladmin" },
+    "sqlAdminPassword": { "value": "${SQL_ADMIN_PASSWORD}" },
+    "sqlSku": { "value": "Basic" },
+    "sqlCapacity": { "value": 5 },
+    "serviceBusSku": { "value": "Standard" },
+    "containerMinReplicas": { "value": 0 },
+    "containerMaxReplicas": { "value": 1 },
+    "containerImage": { "value": "${SERVICE_API_IMAGE_NAME}" },
+    "containerCpu": { "value": "0.25" },
+    "containerMemory": { "value": "0.5Gi" },
+    "storageSku": { "value": "Standard_LRS" },
+    "swaSku": { "value": "Free" }
+  }
+}

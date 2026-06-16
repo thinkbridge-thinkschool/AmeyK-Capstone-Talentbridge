@@ -1,0 +1,20 @@
+name: talentbridge
+metadata:
+  template: talentbridge@0.0.1
+
+infra:
+  provider: bicep
+  path: infra
+  module: main
+
+services:
+  api:
+    project: src/API/TalentBridge.API
+    language: dotnet
+    host: containerapp
+    docker:
+      path: ./Dockerfile
+      context: .
+
+pipeline:
+  provider: github

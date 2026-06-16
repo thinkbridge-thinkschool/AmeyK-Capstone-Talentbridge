@@ -25,22 +25,25 @@ public class UpdateApplicationStatusCommandHandler : IRequestHandler<UpdateAppli
         await using var transaction = await _dbContext.Database.BeginTransactionAsync(cancellationToken);
         try
         {
-            switch (request.NewStatus.ToLowerInvariant())
+            // HR id placeholder — in a real implementation this comes from ICurrentUserService
+            var hrId = Guid.Empty;
+
+            var operationResult = request.NewStatus.ToLowerInvariant() switch
             {
-                case "underreview": application.MoveToReview(); break;
-                case "accepted": application.Accept(); break;
-                case "rejected":
-                    if (string.IsNullOrWhiteSpace(request.RejectionReason))
-                        throw new ArgumentException("Rejection reason is required.");
-                    application.Reject(request.RejectionReason!);
-                    break;
-                default:
-                    throw new ArgumentException($"Invalid status transition: {request.NewStatus}");
-            }
+                "underreview" => application.StartReview(hrId),
+                "shortlisted" => application.Shortlist(hrId),
+                "accepted" => application.Accept(hrId),
+                "rejected" => application.Reject(hrId, request.RejectionReason ?? string.Empty),
+                "withdrawn" => application.Withdraw(),
+                _ => throw new ArgumentException($"Invalid status transition: {request.NewStatus}")
+            };
+
+            if (operationResult.IsFailure)
+                throw new InvalidOperationException(operationResult.Error);
 
             var outboxMessage = new OutboxMessage
             {
-                EventType = $"Application{request.NewStatus}",
+                Type = $"Application{request.NewStatus}",
                 Payload = JsonSerializer.Serialize(new
                 {
                     ApplicationId = application.Id,
@@ -48,7 +51,8 @@ public class UpdateApplicationStatusCommandHandler : IRequestHandler<UpdateAppli
                     application.JobId,
                     NewStatus = request.NewStatus,
                     RejectionReason = request.RejectionReason
-                })
+                }),
+                OccurredOnUtc = DateTime.UtcNow
             };
 
             await _dbContext.OutboxMessages.AddAsync(outboxMessage, cancellationToken);
