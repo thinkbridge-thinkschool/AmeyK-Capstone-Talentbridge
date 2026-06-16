@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TalentBridge</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, sans-serif; background: #f4f6f9; color: #1a1a2e; }
+
+    header {
+      background: linear-gradient(135deg, #1a1a2e, #16213e);
+      color: #fff;
+      padding: 2rem;
+      text-align: center;
+    }
+    header h1 { font-size: 2rem; letter-spacing: 1px; }
+    header p  { opacity: .7; margin-top: .4rem; }
+
+    .container { max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+
+    .card {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.08);
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.1rem; margin-bottom: 1rem; color: #16213e; }
+
+    .status-row { display: flex; align-items: center; gap: .6rem; font-size: .95rem; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: #ccc; flex-shrink: 0; }
+    .dot.green  { background: #22c55e; }
+    .dot.red    { background: #ef4444; }
+    .dot.yellow { background: #f59e0b; animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+    .endpoint-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: .75rem;
+    }
+    .endpoint-btn {
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      background: #f8fafc;
+      cursor: pointer;
+      text-align: left;
+      transition: background .15s;
+    }
+    .endpoint-btn:hover { background: #e0f2fe; }
+    .endpoint-btn .method { font-size: .7rem; font-weight: 700; color: #0ea5e9; }
+    .endpoint-btn .path   { font-size: .8rem; color: #334155; margin-top: .2rem; }
+
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      border-radius: 8px;
+      padding: 1rem;
+      font-size: .8rem;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      min-height: 60px;
+    }
+
+    .input-row { display: flex; gap: .5rem; margin-bottom: .75rem; }
+    .input-row input {
+      flex: 1;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: .5rem .75rem;
+      font-size: .9rem;
+    }
+    .input-row button, .btn {
+      background: #1a1a2e;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: .5rem 1.1rem;
+      cursor: pointer;
+      font-size: .85rem;
+    }
+    .input-row button:hover, .btn:hover { background: #16213e; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>TalentBridge</h1>
+  <p>Enterprise Hiring Platform — API Explorer</p>
+</header>
+
+<div class="container">
+
+  <!-- API Health -->
+  <div class="card">
+    <h2>API Health</h2>
+    <div class="status-row">
+      <span class="dot yellow" id="dot"></span>
+      <span id="health-text">Checking...</span>
+    </div>
+  </div>
+
+  <!-- Quick Endpoints -->
+  <div class="card">
+    <h2>Quick Test Endpoints</h2>
+    <div class="endpoint-grid">
+      <button class="endpoint-btn" onclick="call('GET','/health')">
+        <div class="method">GET</div><div class="path">/health</div>
+      </button>
+      <button class="endpoint-btn" onclick="call('GET','/api/jobs')">
+        <div class="method">GET</div><div class="path">/api/jobs</div>
+      </button>
+      <button class="endpoint-btn" onclick="call('GET','/api/jobs?pageSize=5')">
+        <div class="method">GET</div><div class="path">/api/jobs?pageSize=5</div>
+      </button>
+      <button class="endpoint-btn" onclick="call('GET','/swagger')">
+        <div class="method">GET</div><div class="path">/swagger</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- Custom Request -->
+  <div class="card">
+    <h2>Custom Request</h2>
+    <div class="input-row">
+      <select id="method" style="border:1px solid #e2e8f0;border-radius:6px;padding:.5rem .75rem;font-size:.9rem;">
+        <option>GET</option><option>POST</option><option>PUT</option><option>DELETE</option>
+      </select>
+      <input id="path-input" placeholder="/api/jobs" value="/api/jobs" />
+      <button onclick="callCustom()">Send</button>
+    </div>
+    <div id="body-area" style="display:none;margin-bottom:.75rem;">
+      <textarea id="req-body" rows="4" style="width:100%;border:1px solid #e2e8f0;border-radius:6px;padding:.5rem;font-family:monospace;font-size:.8rem;" placeholder='{"key":"value"}'></textarea>
+    </div>
+    <pre id="response-output">— response will appear here —</pre>
+  </div>
+
+</div>
+
+<script>
+  // Detect the API base URL: same origin in production, localhost in dev
+  const API = window.location.hostname === 'localhost'
+    ? 'http://localhost:5000'
+    : '';   // same origin (reverse proxy or Container App FQDN)
+
+  async function call(method, path) {
+    const out = document.getElementById('response-output');
+    out.textContent = 'Loading…';
+    try {
+      const r = await fetch(API + path, { method });
+      const text = await r.text();
+      try {
+        out.textContent = JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        out.textContent = text;
+      }
+    } catch (e) {
+      out.textContent = 'Error: ' + e.message;
+    }
+  }
+
+  async function callCustom() {
+    const method = document.getElementById('method').value;
+    const path   = document.getElementById('path-input').value;
+    const body   = document.getElementById('req-body').value;
+    const out    = document.getElementById('response-output');
+    out.textContent = 'Loading…';
+    try {
+      const opts = { method, headers: { 'Content-Type': 'application/json' } };
+      if (body && method !== 'GET') opts.body = body;
+      const r = await fetch(API + path, opts);
+      const text = await r.text();
+      try {
+        out.textContent = JSON.stringify(JSON.parse(text), null, 2);
+      } catch {
+        out.textContent = text;
+      }
+    } catch (e) {
+      out.textContent = 'Error: ' + e.message;
+    }
+  }
+
+  document.getElementById('method').addEventListener('change', function() {
+    document.getElementById('body-area').style.display =
+      this.value !== 'GET' ? 'block' : 'none';
+  });
+
+  // Health check on load
+  (async () => {
+    const dot  = document.getElementById('dot');
+    const text = document.getElementById('health-text');
+    try {
+      const r = await fetch(API + '/health');
+      if (r.ok) {
+        dot.className = 'dot green';
+        text.textContent = 'API is healthy';
+      } else {
+        dot.className = 'dot red';
+        text.textContent = 'API returned ' + r.status;
+      }
+    } catch {
+      dot.className = 'dot red';
+      text.textContent = 'Cannot reach API';
+    }
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,62 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  # ── Job 1: Backend → Azure Container App ────────────────────────────────────
+  deploy-backend:
+    name: Build & Deploy API (Container App)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ secrets.REGISTRY_LOGIN_SERVER }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build & Push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ${{ secrets.REGISTRY_LOGIN_SERVER }}/talentbridge-api:latest
+            ${{ secrets.REGISTRY_LOGIN_SERVER }}/talentbridge-api:${{ github.sha }}
+
+      - name: Deploy to Container App
+        uses: azure/container-apps-deploy-action@v1
+        with:
+          resourceGroup: ${{ secrets.AZURE_RESOURCE_GROUP }}
+          containerAppName: ${{ secrets.CONTAINER_APP_NAME }}
+          imageToDeploy: ${{ secrets.REGISTRY_LOGIN_SERVER }}/talentbridge-api:${{ github.sha }}
+
+  # ── Job 2: Frontend → Azure Static Web App ──────────────────────────────────
+  deploy-frontend:
+    name: Deploy Frontend (Static Web App)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Deploy to Static Web App
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: frontend
+          output_location: ''
