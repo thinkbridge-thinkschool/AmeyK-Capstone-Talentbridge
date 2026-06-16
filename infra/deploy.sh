@@ -9,9 +9,9 @@ set -euo pipefail
 ENV=${1:-dev}
 
 if [[ "$ENV" == "prod" ]]; then
-  RESOURCE_GROUP="quotesapp-rg-prod"
+  RESOURCE_GROUP="talentbridge-rg-prod"
 else
-  RESOURCE_GROUP="quotesapp-rg-amey"
+  RESOURCE_GROUP="talentbridge-rg-amey"
 fi
 
 DEPLOYMENT_NAME="talentbridge-${ENV}-iac"
