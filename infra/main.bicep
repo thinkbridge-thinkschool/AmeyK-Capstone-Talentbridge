@@ -2,21 +2,15 @@
 param location string = resourceGroup().location
 
 @description('Base name used to construct resource names')
-param appName string = 'quotesapp'
+param appName string = 'talentbridge'
 
 @description('Suffix for resource naming')
 param suffix string = 'amey'
 
 @description('Environment: dev or prod')
 @allowed(['dev', 'prod'])
+#disable-next-line no-unused-params
 param environment string = 'dev'
-
-@description('SQL administrator login')
-param sqlAdminLogin string = 'sqladmin'
-
-@description('SQL administrator password')
-@secure()
-param sqlAdminPassword string
 
 @description('App Insights sampling percentage')
 param samplingPercentage int = 100
@@ -24,15 +18,11 @@ param samplingPercentage int = 100
 @description('Key Vault soft delete retention days')
 param softDeleteRetentionDays int = 7
 
-param sqlEdition string = 'Basic'
-param sqlCapacity int = 5
-param sqlMaxSizeGB int = 2
 param storageSku string = 'Standard_LRS'
-param minReplicas int = 0
-param maxReplicas int = 1
-param containerCpu string = '0.25'
-param containerMemory string = '0.5Gi'
 param staticWebAppSku string = 'Free'
+
+// NOTE: SQL and Container App excluded — student subscription regional/quota limits.
+// Modules exist in infra/modules/ and are production-ready for a paid subscription.
 
 // ── Log Analytics Workspace (inline) ─────────────────────────────────────────
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
@@ -75,20 +65,6 @@ module appInsights 'modules/appinsights.bicep' = {
   }
 }
 
-// ── SQL Server + Database ─────────────────────────────────────────────────────
-module sql 'modules/sql.bicep' = {
-  name: 'sql-deploy'
-  params: {
-    serverName: '${appName}-sql-${suffix}'
-    location: location
-    adminLogin: sqlAdminLogin
-    adminPassword: sqlAdminPassword
-    edition: sqlEdition
-    capacity: sqlCapacity
-    maxSizeGB: sqlMaxSizeGB
-  }
-}
-
 // ── Service Bus ───────────────────────────────────────────────────────────────
 module serviceBus 'modules/servicebus.bicep' = {
   name: 'servicebus-deploy'
@@ -98,48 +74,21 @@ module serviceBus 'modules/servicebus.bicep' = {
   }
 }
 
-// ── Container Registry + App ──────────────────────────────────────────────────
-module containerApp 'modules/containerapp.bicep' = {
-  name: 'containerapp-deploy'
-  params: {
-    name: '${appName}-api-${suffix}'
-    location: location
-    logAnalyticsCustomerId: logAnalytics.properties.customerId
-    logAnalyticsSharedKey: logAnalytics.listKeys().primarySharedKey
-    minReplicas: minReplicas
-    maxReplicas: maxReplicas
-    cpu: containerCpu
-    memory: containerMemory
-  }
-}
-
-// ── Static Web App ────────────────────────────────────────────────────────────
+// ── Static Web App (eastus2 — eastus does not support staticSites) ───────────
 module staticWebApp 'modules/staticwebapp.bicep' = {
   name: 'staticwebapp-deploy'
   params: {
     name: '${appName}-swa-${suffix}'
-    location: location
+    location: 'eastus2'
     sku: staticWebAppSku
-  }
-}
-
-// ── Key Vault Secrets (writes all connection strings after resources created) ─
-module keyVaultSecrets 'modules/keyvault-secrets.bicep' = {
-  name: 'keyvault-secrets-deploy'
-  params: {
-    keyVaultName: keyVault.outputs.name
-    sqlConnectionString: sql.outputs.connectionString
-    storageConnectionString: storage.outputs.connectionString
-    serviceBusConnectionString: serviceBus.outputs.connectionString
-    appInsightsConnectionString: appInsights.outputs.connectionString
   }
 }
 
 // ── Outputs ───────────────────────────────────────────────────────────────────
 output keyVaultName string = keyVault.outputs.name
+output keyVaultUri string = keyVault.outputs.uri
 output storageAccountName string = storage.outputs.name
-output sqlServerFqdn string = sql.outputs.fqdn
+output appInsightsName string = appInsights.outputs.name
 output serviceBusNamespace string = serviceBus.outputs.name
-output containerAppFqdn string = containerApp.outputs.fqdn
 output staticWebAppUrl string = staticWebApp.outputs.url
-output containerAppPrincipalId string = containerApp.outputs.principalId
+output logAnalyticsName string = logAnalytics.name

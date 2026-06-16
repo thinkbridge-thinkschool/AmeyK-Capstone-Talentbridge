@@ -8,6 +8,15 @@
 
 ---
 
+## Deployment Proof — Azure Portal
+
+Successful deployment: `talentbridge-dev-v3` · Mode: Incremental · State: **Succeeded**  
+Resource Group: `talentbridge-rg-amey` · Region: `eastus2`
+
+![Azure Resources Deployed](ScreenShots/Azure.png)
+
+---
+
 ## What Was Built
 
 | Resource | Dev | Prod |
@@ -450,7 +459,29 @@ az deployment group create \
 
 ---
 
-## 7. What-If Output (dev environment)
+## 7. Actual Deploy Output — Succeeded ✓
+
+```
+PS C:\...\infra> az deployment group create `
+  --resource-group talentbridge-rg-amey `
+  --template-file main.bicep `
+  --parameters parameters/dev.bicepparam `
+  --parameters location=eastus2 `
+  --parameters suffix=tb26 `
+  --name talentbridge-dev-v3 `
+  --mode Incremental `
+  --output table
+
+Name                 State      Timestamp                         Mode         ResourceGroup
+-------------------  ---------  --------------------------------  -----------  --------------------
+talentbridge-dev-v3  Succeeded  2026-06-16T06:29:56.338244+00:00  Incremental  talentbridge-rg-amey
+```
+
+![Azure Portal — Deployed Resources](ScreenShots/Azure.png)
+
+---
+
+## 8. Simulated What-If Output (full stack)
 
 ```
 $ export SQL_ADMIN_PASSWORD="***"
