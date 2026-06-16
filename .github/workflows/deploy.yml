@@ -1,14 +1,21 @@
 name: Deploy
 
 on:
-  push:
-    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options: [ dev, prod ]
 
 jobs:
   # ── Job 1: Backend → Azure Container App ────────────────────────────────────
   deploy-backend:
     name: Build & Deploy API (Container App)
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
 
     steps:
       - name: Checkout
@@ -47,6 +54,7 @@ jobs:
   deploy-frontend:
     name: Deploy Frontend (Static Web App)
     runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
 
     steps:
       - name: Checkout
