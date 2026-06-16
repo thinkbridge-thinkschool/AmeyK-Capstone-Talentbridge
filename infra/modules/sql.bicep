@@ -48,4 +48,5 @@ output serverId string = sqlServer.id
 output serverName string = sqlServer.name
 output fqdn string = sqlServer.properties.fullyQualifiedDomainName
 output databaseName string = sqlDatabase.name
+#disable-next-line outputs-should-not-contain-secrets
 output connectionString string = 'Server=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Initial Catalog=${databaseName};Persist Security Info=False;User ID=${adminLogin};Password=${adminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'

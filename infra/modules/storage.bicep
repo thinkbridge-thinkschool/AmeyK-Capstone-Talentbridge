@@ -33,4 +33,5 @@ resource profilePhotosContainer 'Microsoft.Storage/storageAccounts/blobServices/
 
 output id string = storageAccount.id
 output name string = storageAccount.name
+#disable-next-line outputs-should-not-contain-secrets
 output connectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'

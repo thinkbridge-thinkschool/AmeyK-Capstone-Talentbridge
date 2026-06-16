@@ -7,6 +7,7 @@ param environment = 'prod'
 
 // ── SQL — S2 / 50 DTU / 10 GB ────────────────────────────────────────────────
 param sqlAdminLogin = 'sqladmin'
+param sqlAdminPassword = ''
 param sqlEdition = 'Standard'
 param sqlCapacity = 50
 param sqlMaxSizeGB = 10

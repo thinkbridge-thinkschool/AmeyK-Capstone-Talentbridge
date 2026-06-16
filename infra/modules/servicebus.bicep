@@ -59,4 +59,5 @@ resource resumeProcessorSub 'Microsoft.ServiceBus/namespaces/topics/subscription
 
 output id string = serviceBusNamespace.id
 output name string = serviceBusNamespace.name
+#disable-next-line outputs-should-not-contain-secrets
 output connectionString string = appAuthRule.listKeys().primaryConnectionString
