@@ -181,9 +181,35 @@ providers/Microsoft.Resources/deploymentStacks/talentbridge-stack-dev
 
 ---
 
-## Prod stack deploy output
+## Prod stack deploy output — 2026-06-17
 
-[Paste `az stack group create --name talentbridge-stack-prod` output here after it completes]
+**Command:**
+```bash
+az stack group create --name talentbridge-stack-prod --resource-group talentbridge-rg-amey \
+  --template-file infra/main.bicep --parameters infra/parameters/prod.bicepparam \
+  --action-on-unmanage deleteAll --deny-settings-mode none --yes
+```
+
+**Result:** `provisioningState: succeeded` — Duration: PT44.8268281S
+
+**Stack ID:**
+```
+/subscriptions/50f9dc41-193b-4389-85f2-420f2684cee2/resourceGroups/talentbridge-rg-amey/
+providers/Microsoft.Resources/deploymentStacks/talentbridge-stack-prod
+```
+
+**Stack outputs:**
+| Output | Value |
+|---|---|
+| appInsightsName | `talentbridge-ai-ameyp` |
+| keyVaultName | `talentbridge-kv-ameyp` |
+| keyVaultUri | `https://talentbridge-kv-ameyp.vault.azure.net/` |
+| logAnalyticsName | `talentbridge-law-ameyp` |
+| serviceBusNamespace | `talentbridge-sb-ameyp` |
+| storageAccountName | `talentbridgestameyp` |
+| staticWebAppUrl | `https://blue-mushroom-0218d1c0f.7.azurestaticapps.net` |
+
+**actionOnUnmanage:** `deleteAll` — resources removed from Bicep are automatically deleted.
 
 ---
 
@@ -193,4 +219,12 @@ providers/Microsoft.Resources/deploymentStacks/talentbridge-stack-dev
 az stack group list --resource-group talentbridge-rg-amey --output table
 ```
 
-[Paste output here]
+```
+Name                     State      Resources    Created
+-----------------------  ---------  -----------  --------------------------------
+talentbridge-stack-dev   succeeded  15           2026-06-16T11:33:35.466300+00:00
+talentbridge-stack-prod  succeeded  15           2026-06-17T04:22:10.843543+00:00
+```
+
+**Dev frontend:** https://jolly-island-0a6a1580f.7.azurestaticapps.net
+**Prod frontend:** https://blue-mushroom-0218d1c0f.7.azurestaticapps.net
