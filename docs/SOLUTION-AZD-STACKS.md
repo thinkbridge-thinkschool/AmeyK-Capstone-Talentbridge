@@ -229,6 +229,14 @@ talentbridge-stack-prod  succeeded  15           2026-06-17T04:22:10.843543+00:0
 **Dev frontend (live):** https://lively-rock-00b83f60f.7.azurestaticapps.net
 **Prod frontend (SWA provisioned):** https://blue-mushroom-0218d1c0f.7.azurestaticapps.net
 
+### Azure Portal — Deployment Stack (Succeeded)
+
+![Dev stack succeeded in Azure Portal](ScreenShots/DeploymentSuccess.png)
+
+### Azure Portal — All provisioned resources (15 resources)
+
+![All 15 resources in talentbridge-rg-amey](ScreenShots/Azure.png)
+
 ---
 
 ## Frontend deployment proof — 2026-06-17
@@ -249,4 +257,14 @@ Visit your site at: https://lively-rock-00b83f60f.7.azurestaticapps.net
 
 **Live URL:** https://lively-rock-00b83f60f.7.azurestaticapps.net
 
-**Note on backend:** Student subscription blocks `az acr build` (TasksOperationsNotAllowed) and App Service (0 VM quota). GitHub Actions workflow (`deploy.yml`) handles backend deploy when subscription permits.
+---
+
+## Backend API live — 2026-06-17
+
+Deployed to Azure App Service (West Europe) via zip deploy — no Docker/ACR needed.
+
+**Live URL:** https://talentbridge-api-amey.azurewebsites.net/swagger
+
+### Swagger UI — TalentBridge API live
+
+![TalentBridge API Swagger UI](ScreenShots/Deployment-done.png)
