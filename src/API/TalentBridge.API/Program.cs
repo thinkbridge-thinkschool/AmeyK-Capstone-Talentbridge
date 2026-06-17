@@ -1,5 +1,6 @@
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
+using TalentBridge.API.Infrastructure;
 using Microsoft.OpenApi.Models;
 using TalentBridge.API.Resilience;
 using TalentBridge.Applications.Application;
@@ -13,6 +14,8 @@ var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
 
 // ── Module registrations ──────────────────────────────────────────────────────
+// EF Core connection strings in each module use "Authentication=Active Directory Default"
+// — no password. DefaultAzureCredential picks up az login locally, Managed Identity in Azure.
 builder.Services.AddIdentityModule(config);
 builder.Services.AddJobsInfrastructure(config);
 builder.Services.AddJobsApplication();
@@ -20,18 +23,21 @@ builder.Services.AddApplicationsInfrastructure(config);
 builder.Services.AddApplicationsApplication();
 builder.Services.AddNotificationsModule(config);
 
-// ── Azure clients ─────────────────────────────────────────────────────────────
-var sbConnection = config["ServiceBus:ConnectionString"];
-if (!string.IsNullOrWhiteSpace(sbConnection) && sbConnection != "SET_IN_KEYVAULT")
-    builder.Services.AddSingleton(new ServiceBusClient(sbConnection));
-else
-    builder.Services.AddSingleton(new ServiceBusClient("Endpoint=sb://placeholder.servicebus.windows.net/;SharedAccessKeyName=placeholder;SharedAccessKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA="));
+// ── Azure clients — Managed Identity (no connection string keys) ──────────────
+// DefaultAzureCredential: az login locally, Managed Identity in Azure.
+// Instantiation is isolated in ManagedCredential.cs to avoid Azure.Core/Azure.Identity
+// CS0433 type conflict introduced in Azure.Core 1.55.
+var credential = ManagedCredential.Create();
 
-var storageConnection = config["Storage:ConnectionString"];
-if (!string.IsNullOrWhiteSpace(storageConnection) && storageConnection != "SET_IN_KEYVAULT")
-    builder.Services.AddSingleton(new BlobServiceClient(storageConnection));
-else
-    builder.Services.AddSingleton(new BlobServiceClient("DefaultEndpointsProtocol=https;AccountName=placeholder;AccountKey=AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==;EndpointSuffix=core.windows.net"));
+// Service Bus: namespace FQDN only — no SharedAccessKey
+var sbNamespace = config["ServiceBus:Namespace"]
+    ?? "talentbridge-sb-amey.servicebus.windows.net";
+builder.Services.AddSingleton(new ServiceBusClient(sbNamespace, credential));
+
+// Blob Storage: service URI only — no AccountKey
+var storageUri = config["Storage:ServiceUri"]
+    ?? "https://talentbridgestamey2.blob.core.windows.net/";
+builder.Services.AddSingleton(new BlobServiceClient(new Uri(storageUri), credential));
 
 // ── Caching ───────────────────────────────────────────────────────────────────
 builder.Services.AddMemoryCache();

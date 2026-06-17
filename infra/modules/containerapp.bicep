@@ -11,6 +11,16 @@ param maxReplicas int = 1
 param cpu string = '0.25'
 param memory string = '0.5Gi'
 
+// Resource IDs needed for RBAC role assignments
+param sqlServerId string = ''
+param serviceBusNamespaceId string = ''
+param keyVaultId string = ''
+
+// ── Built-in role definition IDs ──────────────────────────────────────────────
+var sqlDbContributorRoleId     = '9b7fa17d-e63e-47b0-bb0a-15c516ac86ec' // SQL DB Contributor
+var serviceBusDataOwnerRoleId  = '090c5cfd-751d-6253-4d4b-ecd68a7a7a7a' // Azure Service Bus Data Owner
+var keyVaultSecretsUserRoleId  = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
+
 // ── Container Registry ────────────────────────────────────────────────────────
 resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' = {
   name: replace('${name}acr', '-', '')
@@ -41,7 +51,7 @@ resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
   name: name
   location: location
   identity: {
-    type: 'SystemAssigned'   // Managed Identity — used to read Key Vault secrets
+    type: 'SystemAssigned'   // Managed Identity — grants access to SQL, Service Bus, Key Vault
   }
   properties: {
     managedEnvironmentId: containerAppsEnv.id
@@ -63,6 +73,12 @@ resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
           name: 'acr-password'
           value: containerRegistry.listCredentials().passwords[0].value
         }
+        // JWT secret pulled from Key Vault via reference — no plaintext secret in config
+        {
+          name: 'jwt-secret'
+          keyVaultUrl: 'https://${split(keyVaultId, '/')[8]}.vault.azure.net/secrets/JwtSecret'
+          identity: 'system'
+        }
       ]
     }
     template: {
@@ -79,6 +95,10 @@ resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
               name: 'ASPNETCORE_ENVIRONMENT'
               value: 'Production'
             }
+            {
+              name: 'Jwt__Secret'
+              secretRef: 'jwt-secret'
+            }
           ]
         }
       ]
@@ -87,6 +107,43 @@ resource containerApp 'Microsoft.App/containerApps@2023-11-02-preview' = {
         maxReplicas: maxReplicas
       }
     }
+  }
+}
+
+// ── RBAC: SQL DB Contributor on SQL Server ────────────────────────────────────
+// Allows the Container App's MI to authenticate to Azure SQL via Entra ID.
+// The SQL-level CREATE USER FROM EXTERNAL PROVIDER is handled in setup-mi-sql.sh.
+resource sqlRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(sqlServerId)) {
+  name: guid(sqlServerId, containerApp.id, sqlDbContributorRoleId)
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', sqlDbContributorRoleId)
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// ── RBAC: Azure Service Bus Data Owner on Service Bus namespace ───────────────
+// Allows the MI to send and receive messages without a SharedAccessKey.
+resource serviceBusRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(serviceBusNamespaceId)) {
+  name: guid(serviceBusNamespaceId, containerApp.id, serviceBusDataOwnerRoleId)
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', serviceBusDataOwnerRoleId)
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// ── RBAC: Key Vault Secrets User on Key Vault ─────────────────────────────────
+// Allows the MI to read secrets (JWT key, App Insights connection string).
+resource keyVaultRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = if (!empty(keyVaultId)) {
+  name: guid(keyVaultId, containerApp.id, keyVaultSecretsUserRoleId)
+  scope: resourceGroup()
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleId)
+    principalId: containerApp.identity.principalId
+    principalType: 'ServicePrincipal'
   }
 }
 
