@@ -23,7 +23,9 @@ public class PublishJobCommandHandler : IRequestHandler<PublishJobCommand, Unit>
         if (job.CompanyId != request.RequestingCompanyId)
             throw new UnauthorizedAccessException("You do not own this job posting.");
 
-        job.Publish();
+        var result = job.Publish();
+        if (result.IsFailure)
+            throw new InvalidOperationException(result.Error);
 
         await _repository.SaveChangesAsync(cancellationToken);
 

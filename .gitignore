@@ -42,3 +42,9 @@ coverage/
 
 # Publish output
 publish/
+
+# Angular frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/
+frontend/package-lock.json

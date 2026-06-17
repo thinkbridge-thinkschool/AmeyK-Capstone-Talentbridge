@@ -1,92 +1,71 @@
 using TalentBridge.Jobs.Domain.Enums;
 using TalentBridge.Jobs.Domain.Events;
+using TalentBridge.Shared.Common;
 using TalentBridge.Shared.Domain;
 
 namespace TalentBridge.Jobs.Domain.Aggregates;
 
 public class Job : AggregateRoot
 {
-    private readonly List<string> _requiredSkills = new();
-
-    public Guid CompanyId { get; private set; }
     public string Title { get; private set; } = string.Empty;
     public string Description { get; private set; } = string.Empty;
-    public string Location { get; private set; } = string.Empty;
+    public Guid CompanyId { get; private set; }
+    public Guid PostedByHRId { get; private set; }
     public decimal SalaryMin { get; private set; }
     public decimal SalaryMax { get; private set; }
+    public string Location { get; private set; } = string.Empty;
     public JobStatus Status { get; private set; }
-    public JobType Type { get; private set; }
-    public DateTime? ClosingDate { get; private set; }
-    public IReadOnlyList<string> RequiredSkills => _requiredSkills.AsReadOnly();
+    public DateTime CreatedAtUtc { get; private set; }
+    public DateTime? PublishedAtUtc { get; private set; }
+    public DateTime? ClosedAtUtc { get; private set; }
+    public DateTime? ExpiresAtUtc { get; private set; }
 
     private Job() { }
 
-    public static Job Create(
-        Guid companyId,
-        string title,
-        string description,
-        string location,
-        decimal salaryMin,
-        decimal salaryMax,
-        JobType type,
-        List<string> skills)
+    public static Result<Job> Create(string title, string description, Guid companyId, Guid postedByHRId, decimal salaryMin, decimal salaryMax, string location)
     {
-        if (string.IsNullOrWhiteSpace(title))
-            throw new ArgumentException("Title cannot be empty.", nameof(title));
-
-        if (salaryMin < 0)
-            throw new ArgumentException("SalaryMin must be >= 0.", nameof(salaryMin));
-
-        if (salaryMax <= salaryMin)
-            throw new ArgumentException("SalaryMax must be > SalaryMin.", nameof(salaryMax));
-
-        if (skills == null || skills.Count == 0)
-            throw new ArgumentException("Skills list cannot be empty.", nameof(skills));
+        if (string.IsNullOrWhiteSpace(title)) return Result<Job>.Failure("Title cannot be empty.");
+        if (title.Length > 200) return Result<Job>.Failure("Title cannot exceed 200 characters.");
+        if (string.IsNullOrWhiteSpace(description)) return Result<Job>.Failure("Description cannot be empty.");
+        if (salaryMin <= 0) return Result<Job>.Failure("SalaryMin must be greater than 0.");
+        if (salaryMax < salaryMin) return Result<Job>.Failure("SalaryMax must be >= SalaryMin.");
+        if (string.IsNullOrWhiteSpace(location)) return Result<Job>.Failure("Location cannot be empty.");
 
         var job = new Job
         {
-            CompanyId = companyId,
             Title = title,
             Description = description,
-            Location = location,
+            CompanyId = companyId,
+            PostedByHRId = postedByHRId,
             SalaryMin = salaryMin,
             SalaryMax = salaryMax,
-            Type = type,
-            Status = JobStatus.Draft
+            Location = location,
+            Status = JobStatus.Draft,
+            CreatedAtUtc = DateTime.UtcNow,
+            ExpiresAtUtc = DateTime.UtcNow.AddDays(30)
         };
 
-        job._requiredSkills.AddRange(skills);
-        job.AddDomainEvent(new JobCreatedEvent(job.Id, companyId, title));
-
-        return job;
+        job.RaiseDomainEvent(new JobCreatedEvent(job.Id, companyId, title));
+        return Result<Job>.Success(job);
     }
 
-    public void Publish()
+    public Result Publish()
     {
-        if (Status != JobStatus.Draft)
-            throw new InvalidOperationException("Only Draft jobs can be published.");
-
+        if (Status != JobStatus.Draft) return Result.Failure("Only Draft jobs can be published.");
         Status = JobStatus.Active;
-        AddDomainEvent(new JobPublishedEvent(Id, CompanyId, Title, Location, [.. _requiredSkills]));
+        PublishedAtUtc = DateTime.UtcNow;
+        RaiseDomainEvent(new JobPublishedEvent(Id, CompanyId, Title));
+        return Result.Success();
     }
 
-    public void Close()
+    public Result Close()
     {
-        if (Status != JobStatus.Active)
-            throw new InvalidOperationException("Only Active jobs can be closed.");
-
+        if (Status != JobStatus.Active) return Result.Failure("Only Active jobs can be closed.");
         Status = JobStatus.Closed;
-        AddDomainEvent(new JobClosedEvent(Id, DateTime.UtcNow));
+        ClosedAtUtc = DateTime.UtcNow;
+        RaiseDomainEvent(new JobClosedEvent(Id, DateTime.UtcNow));
+        return Result.Success();
     }
 
-    public void Update(string title, string description, string location)
-    {
-        if (Status != JobStatus.Draft)
-            throw new InvalidOperationException("Only Draft jobs can be updated.");
-
-        Title = title;
-        Description = description;
-        Location = location;
-        UpdatedAt = DateTime.UtcNow;
-    }
+    public bool IsAcceptingApplications() => Status == JobStatus.Active && ExpiresAtUtc > DateTime.UtcNow;
 }

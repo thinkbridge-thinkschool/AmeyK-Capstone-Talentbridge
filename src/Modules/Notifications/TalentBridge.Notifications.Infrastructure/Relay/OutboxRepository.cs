@@ -10,10 +10,10 @@ public class OutboxRepository : IOutboxRepository
 
     public OutboxRepository(IRelayDbContext dbContext) => _dbContext = dbContext;
 
-    public async Task<List<OutboxMessage>> GetPendingAsync(int maxRetries, CancellationToken ct) =>
+    public async Task<List<OutboxMessage>> GetPendingAsync(CancellationToken ct) =>
         await _dbContext.OutboxMessages
-            .Where(m => m.ProcessedAt == null && m.RetryCount < maxRetries)
-            .OrderBy(m => m.CreatedAt)
+            .Where(m => m.ProcessedOnUtc == null)
+            .OrderBy(m => m.OccurredOnUtc)
             .Take(50)
             .ToListAsync(ct);
 

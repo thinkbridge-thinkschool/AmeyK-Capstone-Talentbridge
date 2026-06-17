@@ -27,20 +27,183 @@ Resilience (HttpClient):
 
 ```
 TalentBridge/
+├── .github/workflows/
+│   ├── ci.yml                              ← auto-runs on push
+│   └── deploy.yml                          ← manual workflow_dispatch
+├── docs/
+│   ├── SOLUTION-BICEP-IAC.md
+│   └── ScreenShots/Azure.png
+├── frontend/
+│   ├── index.html                          ← API explorer SPA
+│   └── staticwebapp.config.json
+├── infra/
+│   ├── main.bicep
+│   ├── deploy.sh
+│   ├── modules/  (appinsights, containerapp, keyvault, servicebus, sql, staticwebapp, storage)
+│   └── parameters/  dev.bicepparam  prod.bicepparam
 ├── src/
 │   ├── API/TalentBridge.API/               ← Controllers, Program.cs, Polly
-│   ├── Shared/TalentBridge.Shared/         ← AggregateRoot, Result<T>, OutboxMessage
+│   ├── Shared/TalentBridge.Shared/         ← AggregateRoot<TId>, Result<T>, OutboxMessage, IDomainEvent
 │   └── Modules/
 │       ├── Identity/    Domain | Application | Infrastructure
+│       ├── Companies/   Domain | Application | Infrastructure
 │       ├── Jobs/        Domain | Application | Infrastructure
 │       ├── Applications/Domain | Application | Infrastructure
-│       ├── Companies/   Domain | Application | Infrastructure
 │       └── Notifications/Domain | Application | Infrastructure
 ├── tests/
-│   ├── TalentBridge.Jobs.Domain.Tests        (8 tests)
-│   ├── TalentBridge.Applications.Domain.Tests (4 tests)
-│   └── TalentBridge.Identity.Domain.Tests    (4 tests)
-└── TalentBridge.slnx   (20 projects, 0 errors, 16/16 tests passing)
+│   ├── TalentBridge.Jobs.Domain.Tests         (8 tests)
+│   ├── TalentBridge.Applications.Domain.Tests (8 tests)
+│   └── TalentBridge.Identity.Domain.Tests     (7 tests)
+└── TalentBridge.slnx   (20 projects, 0 errors, 23/23 tests passing)
+```
+
+### Detailed Folder Structure
+
+```
+TalentBridge/
+├── src/
+│   ├── API/
+│   │   └── TalentBridge.API/
+│   │       ├── Controllers/
+│   │       │   ├── ApplicationsController.cs
+│   │       │   ├── AuthController.cs
+│   │       │   ├── JobsController.cs
+│   │       │   └── ResumesController.cs
+│   │       ├── Resilience/
+│   │       │   ├── ResilienceEndpoints.cs
+│   │       │   └── TalentBridgeResiliencePolicies.cs
+│   │       ├── Program.cs
+│   │       ├── appsettings.json
+│   │       └── appsettings.Development.json
+│   │
+│   ├── Shared/
+│   │   └── TalentBridge.Shared/
+│   │       ├── Common/
+│   │       │   └── Result.cs                ← Result<T> + non-generic Result
+│   │       ├── Domain/
+│   │       │   ├── AggregateRoot.cs         ← AggregateRoot<TId> + AggregateRoot alias
+│   │       │   ├── BaseEntity.cs
+│   │       │   └── IDomainEvent.cs          ← : INotification (MediatR)
+│   │       ├── Interfaces/
+│   │       │   └── ICurrentUserService.cs
+│   │       └── Outbox/
+│   │           └── OutboxMessage.cs         ← Type, OccurredOnUtc, ProcessedOnUtc
+│   │
+│   └── Modules/
+│       │
+│       ├── Identity/
+│       │   ├── TalentBridge.Identity.Domain/
+│       │   │   ├── Entities/
+│       │   │   │   └── User.cs              ← : AggregateRoot, Result<User>.Create, RefreshToken
+│       │   │   ├── Enums/
+│       │   │   │   └── UserRole.cs
+│       │   │   ├── Events/
+│       │   │   │   └── UserRegisteredEvent.cs
+│       │   │   └── Repositories/
+│       │   │       └── IUserRepository.cs
+│       │   ├── TalentBridge.Identity.Application/
+│       │   │   ├── Commands/Login/
+│       │   │   │   ├── LoginCommand.cs
+│       │   │   │   └── LoginCommandHandler.cs
+│       │   │   ├── Commands/Register/
+│       │   │   │   ├── RegisterCommand.cs
+│       │   │   │   └── RegisterCommandHandler.cs
+│       │   │   └── Interfaces/
+│       │   │       ├── IIdentityDbContext.cs
+│       │   │       └── ITokenService.cs
+│       │   └── TalentBridge.Identity.Infrastructure/
+│       │       ├── Migrations/
+│       │       ├── Persistence/
+│       │       │   ├── IdentityDbContext.cs
+│       │       │   ├── IdentityDbContextFactory.cs
+│       │       │   └── UserRepository.cs
+│       │       └── Services/
+│       │           ├── CurrentUserService.cs
+│       │           └── TokenService.cs
+│       │
+│       ├── Companies/
+│       │   ├── TalentBridge.Companies.Domain/
+│       │   │   ├── Entities/
+│       │   │   │   └── Company.cs           ← Create, Approve, UpdateProfile
+│       │   │   └── Events/
+│       │   │       ├── CompanyCreatedEvent.cs
+│       │   │       └── CompanyApprovedEvent.cs
+│       │   ├── TalentBridge.Companies.Application/   ← Brief 03 placeholder
+│       │   └── TalentBridge.Companies.Infrastructure/ ← Brief 03 placeholder
+│       │
+│       ├── Jobs/
+│       │   ├── TalentBridge.Jobs.Domain/
+│       │   │   ├── Aggregates/
+│       │   │   │   └── Job.cs              ← Result<Job>.Create, PostedByHRId, ExpiresAtUtc
+│       │   │   ├── Enums/
+│       │   │   │   ├── JobStatus.cs
+│       │   │   │   └── JobType.cs
+│       │   │   ├── Events/
+│       │   │   │   ├── JobCreatedEvent.cs
+│       │   │   │   ├── JobPublishedEvent.cs
+│       │   │   │   └── JobClosedEvent.cs
+│       │   │   └── Repositories/
+│       │   │       └── IJobRepository.cs
+│       │   ├── TalentBridge.Jobs.Application/
+│       │   │   ├── Commands/CloseJob/
+│       │   │   ├── Commands/PostJob/
+│       │   │   ├── Commands/PublishJob/
+│       │   │   ├── DTOs/JobDto.cs
+│       │   │   └── Queries/GetJobById/ + SearchJobs/
+│       │   └── TalentBridge.Jobs.Infrastructure/
+│       │       ├── Migrations/
+│       │       └── Persistence/
+│       │           ├── JobRepository.cs
+│       │           └── JobsDbContext.cs
+│       │
+│       ├── Applications/
+│       │   ├── TalentBridge.Applications.Domain/
+│       │   │   ├── Aggregates/
+│       │   │   │   └── JobApplication.cs   ← Submitted→UnderReview→Shortlisted→Accepted/Rejected/Withdrawn
+│       │   │   ├── Enums/
+│       │   │   │   └── ApplicationStatus.cs  ← Submitted, UnderReview, Shortlisted, Accepted, Rejected, Withdrawn
+│       │   │   ├── Events/
+│       │   │   │   ├── ApplicationSubmittedEvent.cs
+│       │   │   │   ├── ApplicationStatusChangedEvent.cs
+│       │   │   │   ├── ApplicationAcceptedEvent.cs
+│       │   │   │   └── ApplicationWithdrawnEvent.cs
+│       │   │   └── Repositories/
+│       │   │       └── IApplicationRepository.cs
+│       │   ├── TalentBridge.Applications.Application/
+│       │   │   ├── Commands/Apply/
+│       │   │   ├── Commands/UpdateStatus/
+│       │   │   ├── Commands/UploadResume/
+│       │   │   └── Queries/GetApplication/
+│       │   └── TalentBridge.Applications.Infrastructure/
+│       │       ├── Migrations/
+│       │       ├── Persistence/
+│       │       └── Storage/AzureResumeStorageService.cs
+│       │
+│       └── Notifications/
+│           ├── TalentBridge.Notifications.Domain/
+│           │   └── Entities/
+│           │       └── NotificationRecord.cs
+│           ├── TalentBridge.Notifications.Application/  ← placeholder
+│           └── TalentBridge.Notifications.Infrastructure/
+│               ├── Consumers/TalentBridgeEventConsumer.cs
+│               ├── Relay/
+│               │   ├── OutboxRelayService.cs
+│               │   ├── OutboxRepository.cs
+│               │   └── RelayDbContext.cs
+│               └── Services/InMemoryProcessedMessageStore.cs
+│
+├── tests/
+│   ├── TalentBridge.Jobs.Domain.Tests/
+│   │   └── JobTests.cs                     (8 tests)
+│   ├── TalentBridge.Applications.Domain.Tests/
+│   │   └── JobApplicationTests.cs          (8 tests)
+│   └── TalentBridge.Identity.Domain.Tests/
+│       └── UserTests.cs                    (7 tests)
+│
+├── Dockerfile
+├── TalentBridge.slnx
+├── DESIGN.md
+└── README.md
 ```
 
 ---
@@ -150,13 +313,18 @@ stateDiagram-v2
 ```mermaid
 stateDiagram-v2
     direction LR
-    [*] --> Submitted : Apply()
-    Submitted --> UnderReview : MoveToReview()
-    UnderReview --> Accepted : Accept()
-    UnderReview --> Rejected : Reject(reason)
-    Submitted --> Rejected : Reject(reason)
+    [*] --> Submitted : Create()
+    Submitted --> UnderReview : StartReview(hrId)
+    UnderReview --> Shortlisted : Shortlist(hrId)
+    Shortlisted --> Accepted : Accept(hrId)
+    UnderReview --> Rejected : Reject(hrId, notes)
+    Shortlisted --> Rejected : Reject(hrId, notes)
+    Submitted --> Withdrawn : Withdraw()
+    UnderReview --> Withdrawn : Withdraw()
+    Shortlisted --> Withdrawn : Withdraw()
     Accepted --> [*]
     Rejected --> [*]
+    Withdrawn --> [*]
 ```
 
 ---
@@ -221,12 +389,12 @@ graph LR
 
 | Module | Domain | Application | Infrastructure |
 |--------|--------|-------------|---------------|
-| Identity | `User`, `UserRole` | Login, Register, JWT | `IdentityDbContext`, BCrypt, JWT |
-| Jobs | `Job`, `JobStatus`, `JobType` | PostJob, PublishJob, CloseJob, GetJob, SearchJobs | `JobsDbContext`, `JobRepository` |
-| Applications | `JobApplication`, `ApplicationStatus` | Apply, UpdateStatus, UploadResume, GetApplication | `ApplicationsDbContext`, Blob Storage |
-| Companies | Placeholder | Placeholder | Placeholder |
-| Notifications | (shared kernel events) | (listens to outbox) | Service Bus consumer + Outbox relay |
-| **Shared** | `AggregateRoot`, `BaseEntity`, `IDomainEvent`, `OutboxMessage`, `Result<T>`, `ICurrentUserService` | — | — |
+| Identity | `User` (AggregateRoot), `UserRole`, `UserRegisteredEvent` | Login, Register, JWT | `IdentityDbContext`, BCrypt, JWT |
+| Companies | `Company` (Create/Approve/UpdateProfile), `CompanyCreatedEvent`, `CompanyApprovedEvent` | Brief 03 placeholder | Brief 03 placeholder |
+| Jobs | `Job` (Result<Job>.Create), `JobStatus`, events | PostJob, PublishJob, CloseJob, GetJob, SearchJobs | `JobsDbContext`, `JobRepository` |
+| Applications | `JobApplication` (6-state machine), `ApplicationStatus` (6 values), events | Apply, UpdateStatus, UploadResume, GetApplication | `ApplicationsDbContext`, Blob Storage |
+| Notifications | `NotificationRecord` | (listens to outbox) | Service Bus consumer + Outbox relay |
+| **Shared** | `AggregateRoot<TId>`, `BaseEntity`, `IDomainEvent : INotification`, `OutboxMessage`, `Result<T>`, `Result`, `ICurrentUserService` | — | — |
 | **API** | — | — | Controllers, Program.cs, Polly pipeline |
 
 ---
@@ -234,9 +402,10 @@ graph LR
 ## Key Technical Decisions
 
 ### 1. Shared Kernel
-- `AggregateRoot` — holds a private `List<IDomainEvent>`, raised via `AddDomainEvent()`, cleared after persistence
-- `Result<T>` — railway-oriented error handling; avoids exceptions for business rule failures
-- `OutboxMessage` — Id, EventType, Payload (JSON), CreatedAt, ProcessedAt, RetryCount, Error
+- `AggregateRoot<TId>` — generic; non-generic `AggregateRoot` is a `AggregateRoot<Guid>` alias. Events raised via `RaiseDomainEvent()`, cleared after persistence
+- `IDomainEvent : INotification` — MediatR integration; all events carry `EventId` + `OccurredOnUtc`
+- `Result<T>` / `Result` — railway-oriented error handling; avoids exceptions for business rule failures
+- `OutboxMessage` — Id, Type, Payload (JSON), OccurredOnUtc, ProcessedOnUtc
 
 ### 2. CQRS with MediatR v14
 Every user action is a `IRequest<T>` command or query. FluentValidation pipeline behavior validates before the handler runs. Three assembly scans in `Program.cs` cover all modules.
@@ -374,23 +543,22 @@ Wrap order ensures retries don't fight the timeout: each attempt gets a fresh 5s
 
 ## Testing
 
-16 unit tests across 3 suites — all passing:
+23 unit tests across 3 suites — all passing:
 
 | Suite | Tests | Coverage |
 |-------|-------|---------|
-| `TalentBridge.Jobs.Domain.Tests` | 8 | Job state machine: create, publish, close, validation guards |
-| `TalentBridge.Applications.Domain.Tests` | 4 | Application state machine: submit, review, accept, reject |
-| `TalentBridge.Identity.Domain.Tests` | 4 | User: create, BCrypt hash, verify correct/wrong password |
+| `TalentBridge.Jobs.Domain.Tests` | 8 | Job state machine: create, publish, close, validation guards, IsAcceptingApplications |
+| `TalentBridge.Applications.Domain.Tests` | 8 | Full 6-state machine: submit, review, shortlist, accept, reject, withdraw |
+| `TalentBridge.Identity.Domain.Tests` | 7 | User: create, events, RefreshToken, revoke token, BCrypt verify |
 
 ---
 
 ## Build Stats
 
 - **Projects**: 20 (17 src + 3 tests)
-- **Source .cs files**: 98 (src) + 3 (tests) = 101 total (excluding bin/obj)
 - **Solution file**: `TalentBridge.slnx`
 - **Build result**: `0 Warning(s) 0 Error(s)`
-- **Test result**: `16 Passed 0 Failed`
+- **Test result**: `23 Passed 0 Failed`
 
 ---
 

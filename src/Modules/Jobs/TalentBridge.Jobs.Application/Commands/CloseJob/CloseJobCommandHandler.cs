@@ -23,7 +23,9 @@ public class CloseJobCommandHandler : IRequestHandler<CloseJobCommand, Unit>
         if (job.CompanyId != request.RequestingCompanyId)
             throw new UnauthorizedAccessException("You do not own this job posting.");
 
-        job.Close();
+        var result = job.Close();
+        if (result.IsFailure)
+            throw new InvalidOperationException(result.Error);
 
         await _repository.SaveChangesAsync(cancellationToken);
 

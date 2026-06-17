@@ -6,57 +6,63 @@ namespace TalentBridge.Jobs.Domain.Tests;
 
 public class JobTests
 {
-    private static Job CreateValidJob(string title = "Software Engineer") =>
-        Job.Create(
-            Guid.NewGuid(),
+    private static Job CreateValidJob(string title = "Software Engineer")
+    {
+        var result = Job.Create(
             title,
             "Build great software",
-            "Remote",
+            Guid.NewGuid(),
+            Guid.NewGuid(),
             50000m,
             100000m,
-            JobType.FullTime,
-            ["C#", "Azure"]);
+            "Remote");
+        return result.Value!;
+    }
 
     [Fact]
     public void Create_WithValidData_ShouldSucceed()
     {
-        var job = CreateValidJob();
+        var result = Job.Create("Software Engineer", "Build great software", Guid.NewGuid(), Guid.NewGuid(), 50000m, 100000m, "Remote");
 
+        Assert.True(result.IsSuccess);
+        var job = result.Value!;
         Assert.NotEqual(Guid.Empty, job.Id);
         Assert.Equal("Software Engineer", job.Title);
         Assert.Equal(JobStatus.Draft, job.Status);
-        Assert.Equal(2, job.RequiredSkills.Count);
     }
 
     [Fact]
-    public void Create_WithEmptyTitle_ShouldThrow()
+    public void Create_WithEmptyTitle_ShouldFail()
     {
-        var ex = Assert.Throws<ArgumentException>(() => CreateValidJob(""));
-        Assert.Contains("Title", ex.Message);
+        var result = Job.Create("", "Desc", Guid.NewGuid(), Guid.NewGuid(), 50000m, 100000m, "Remote");
+        Assert.True(result.IsFailure);
+        Assert.Contains("Title", result.Error);
     }
 
     [Fact]
-    public void Create_WithInvalidSalaryRange_ShouldThrow()
+    public void Create_WithInvalidSalaryRange_ShouldFail()
     {
-        var ex = Assert.Throws<ArgumentException>(() =>
-            Job.Create(Guid.NewGuid(), "Dev", "Desc", "NYC", 100000m, 50000m, JobType.FullTime, ["C#"]));
-        Assert.Contains("SalaryMax", ex.Message);
+        var result = Job.Create("Dev", "Desc", Guid.NewGuid(), Guid.NewGuid(), 100000m, 50000m, "NYC");
+        Assert.True(result.IsFailure);
+        Assert.Contains("SalaryMax", result.Error);
     }
 
     [Fact]
     public void Publish_FromDraft_ShouldChangeStatusToActive()
     {
         var job = CreateValidJob();
-        job.Publish();
+        var result = job.Publish();
+        Assert.True(result.IsSuccess);
         Assert.Equal(JobStatus.Active, job.Status);
     }
 
     [Fact]
-    public void Publish_FromActive_ShouldThrow()
+    public void Publish_FromActive_ShouldFail()
     {
         var job = CreateValidJob();
         job.Publish();
-        Assert.Throws<InvalidOperationException>(() => job.Publish());
+        var result = job.Publish();
+        Assert.True(result.IsFailure);
     }
 
     [Fact]
@@ -64,15 +70,17 @@ public class JobTests
     {
         var job = CreateValidJob();
         job.Publish();
-        job.Close();
+        var result = job.Close();
+        Assert.True(result.IsSuccess);
         Assert.Equal(JobStatus.Closed, job.Status);
     }
 
     [Fact]
-    public void Close_FromDraft_ShouldThrow()
+    public void Close_FromDraft_ShouldFail()
     {
         var job = CreateValidJob();
-        Assert.Throws<InvalidOperationException>(() => job.Close());
+        var result = job.Close();
+        Assert.True(result.IsFailure);
     }
 
     [Fact]

@@ -22,7 +22,14 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
             throw new ArgumentException($"Invalid role: {request.Role}");
 
-        var user = User.Create(request.Email, request.Password, role, request.FirstName, request.LastName, request.CompanyId);
+        var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
+
+        var result = User.Create(request.Email, passwordHash, role);
+
+        if (result.IsFailure)
+            throw new ArgumentException(result.Error);
+
+        var user = result.Value!;
 
         await _dbContext.Users.AddAsync(user, cancellationToken);
         await _dbContext.SaveChangesAsync(cancellationToken);

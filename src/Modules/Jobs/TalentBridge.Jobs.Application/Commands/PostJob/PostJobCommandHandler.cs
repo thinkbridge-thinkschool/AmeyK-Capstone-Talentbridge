@@ -1,7 +1,6 @@
 using MediatR;
 using Microsoft.Extensions.Logging;
 using TalentBridge.Jobs.Domain.Aggregates;
-using TalentBridge.Jobs.Domain.Enums;
 using TalentBridge.Jobs.Domain.Repositories;
 
 namespace TalentBridge.Jobs.Application.Commands.PostJob;
@@ -19,18 +18,19 @@ public class PostJobCommandHandler : IRequestHandler<PostJobCommand, PostJobResu
 
     public async Task<PostJobResult> Handle(PostJobCommand request, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<JobType>(request.JobType, true, out var jobType))
-            throw new ArgumentException($"Invalid job type: {request.JobType}");
-
-        var job = Job.Create(
-            request.CompanyId,
+        var result = Job.Create(
             request.Title,
             request.Description,
-            request.Location,
+            request.CompanyId,
+            request.PostedByHRId,
             request.SalaryMin,
             request.SalaryMax,
-            jobType,
-            request.RequiredSkills);
+            request.Location);
+
+        if (result.IsFailure)
+            throw new InvalidOperationException(result.Error);
+
+        var job = result.Value!;
 
         await _repository.AddAsync(job, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);

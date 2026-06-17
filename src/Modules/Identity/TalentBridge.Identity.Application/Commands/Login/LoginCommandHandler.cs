@@ -24,14 +24,11 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
         var user = await _dbContext.Users
             .FirstOrDefaultAsync(u => u.Email == request.Email.ToLowerInvariant(), cancellationToken);
 
-        if (user is null || !user.VerifyPassword(request.Password))
+        if (user is null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
             _logger.LogWarning("[Identity] Failed login attempt for {Email}", request.Email);
             return Result<LoginResult>.Failure("Invalid credentials");
         }
-
-        user.UpdateLastLogin();
-        await _dbContext.SaveChangesAsync(cancellationToken);
 
         var token = _tokenService.GenerateToken(user);
         var expiresAt = DateTime.UtcNow.AddHours(8);
