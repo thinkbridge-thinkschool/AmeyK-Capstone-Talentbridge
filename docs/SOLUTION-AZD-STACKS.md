@@ -226,5 +226,27 @@ talentbridge-stack-dev   succeeded  15           2026-06-16T11:33:35.466300+00:0
 talentbridge-stack-prod  succeeded  15           2026-06-17T04:22:10.843543+00:00
 ```
 
-**Dev frontend:** https://jolly-island-0a6a1580f.7.azurestaticapps.net
-**Prod frontend:** https://blue-mushroom-0218d1c0f.7.azurestaticapps.net
+**Dev frontend (live):** https://lively-rock-00b83f60f.7.azurestaticapps.net
+**Prod frontend (SWA provisioned):** https://blue-mushroom-0218d1c0f.7.azurestaticapps.net
+
+---
+
+## Frontend deployment proof — 2026-06-17
+
+**Angular 17 app deployed to Azure Static Web App:**
+
+```
+Zipping App Artifacts
+Done Zipping App Artifacts
+Uploading build artifacts.
+Finished Upload. Polling on deployment.
+Status: InProgress. Time: 1.18s
+Status: InProgress. Time: 17.42s
+Status: Succeeded. Time: 33.62s
+Deployment Complete :)
+Visit your site at: https://lively-rock-00b83f60f.7.azurestaticapps.net
+```
+
+**Live URL:** https://lively-rock-00b83f60f.7.azurestaticapps.net
+
+**Note on backend:** Student subscription blocks `az acr build` (TasksOperationsNotAllowed) and App Service (0 VM quota). GitHub Actions workflow (`deploy.yml`) handles backend deploy when subscription permits.
