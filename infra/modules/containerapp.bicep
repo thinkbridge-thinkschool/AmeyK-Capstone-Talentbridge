@@ -18,7 +18,7 @@ param keyVaultId string = ''
 
 // ── Built-in role definition IDs ──────────────────────────────────────────────
 var sqlDbContributorRoleId     = '9b7fa17d-e63e-47b0-bb0a-15c516ac86ec' // SQL DB Contributor
-var serviceBusDataOwnerRoleId  = '090c5cfd-751d-6253-4d4b-ecd68a7a7a7a' // Azure Service Bus Data Owner
+var serviceBusDataOwnerRoleId  = '090c5cfd-751d-490a-894a-3ce6f1109419' // Azure Service Bus Data Owner
 var keyVaultSecretsUserRoleId  = '4633458b-17de-408a-b874-0445c86b69e6' // Key Vault Secrets User
 
 // ── Container Registry ────────────────────────────────────────────────────────

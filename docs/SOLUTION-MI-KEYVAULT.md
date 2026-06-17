@@ -165,6 +165,30 @@ grep -r "AccountKey"      src/API/TalentBridge.API/appsettings*.json  # → (emp
 
 ---
 
+## Screenshots — live proof
+
+### appsettings.json — no passwords, no keys
+
+![appsettings.json with zero secrets](ScreenShots/MI-AppSettings-NoSecrets.png)
+
+### App Service — System Assigned Managed Identity enabled
+
+![talentbridge-api-amey Identity page — Status On](ScreenShots/MI-ContainerApp-Identity.png)
+
+### Key Vault — RBAC role assignment for the MI
+
+![Key Vault IAM showing talentbridge-api-amey with Key Vault Secrets User role](ScreenShots/MI-KeyVault-RoleAssignment.png)
+
+### Key Vault — Secrets locked down by RBAC
+
+![Key Vault Secrets — unauthorized without Key Vault Secrets User role](ScreenShots/MI-KeyVault-Secrets.png)
+
+### Build — 0 errors, 0 warnings after removing all secrets
+
+![dotnet build TalentBridge.slnx — Build succeeded 0 errors 0 warnings](ScreenShots/MI-Build-ZeroErrors.png)
+
+---
+
 ## What I learned
 
 1. **Managed Identity is an identity, not a credential.** There is no password to rotate,
