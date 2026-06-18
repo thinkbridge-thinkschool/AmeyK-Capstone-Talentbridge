@@ -1,6 +1,10 @@
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 using TalentBridge.API.Infrastructure;
+using TalentBridge.API.Telemetry;
 using Microsoft.OpenApi.Models;
 using TalentBridge.API.Resilience;
 using TalentBridge.Applications.Application;
@@ -38,6 +42,28 @@ builder.Services.AddSingleton(new ServiceBusClient(sbNamespace, credential));
 var storageUri = config["Storage:ServiceUri"]
     ?? "https://talentbridgestamey2.blob.core.windows.net/";
 builder.Services.AddSingleton(new BlobServiceClient(new Uri(storageUri), credential));
+
+// ── OpenTelemetry → Azure App Insights ───────────────────────────────────────
+// UseAzureMonitor() reads APPLICATIONINSIGHTS_CONNECTION_STRING automatically.
+// That env var is resolved from Key Vault at runtime — no connection string in code.
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .SetResourceBuilder(
+            ResourceBuilder.CreateDefault()
+                .AddService("TalentBridge", serviceVersion: "1.0.0"))
+        .AddAspNetCoreInstrumentation(opts =>
+        {
+            opts.RecordException = true;
+            opts.Filter = ctx => !ctx.Request.Path.StartsWithSegments("/health");
+        })
+        .AddSqlClientInstrumentation(opts =>
+        {
+            opts.SetDbStatementForText = true;  // captures actual SQL for KQL queries
+            opts.RecordException = true;
+        })
+        .AddHttpClientInstrumentation()
+        .AddSource(TalentBridgeDiagnostics.SourceName))  // custom domain spans
+    .UseAzureMonitor();  // exports traces + metrics + logs to App Insights
 
 // ── Caching ───────────────────────────────────────────────────────────────────
 builder.Services.AddMemoryCache();
