@@ -46,23 +46,15 @@ builder.Services.AddOpenTelemetry()
         })
         .AddSqlClientInstrumentation(opts =>
         {
-            opts.SetDbStatementForText = true;
+            opts.SetDbStatementForText = true;  // captures actual SQL for KQL queries
             opts.RecordException = true;
         })
         .AddHttpClientInstrumentation()
-        .AddSource(TalentBridgeDiagnostics.SourceName)
-        .AddAzureMonitorTraceExporter())
-    .WithMetrics(metrics => metrics
-        .AddAspNetCoreInstrumentation()
-        .AddAzureMonitorMetricExporter());
-
-builder.Logging.AddOpenTelemetry(logging =>
-{
-    logging.IncludeFormattedMessage = true;
-    logging.IncludeScopes = true;
-    logging.AddAzureMonitorLogExporter();
-});
+        .AddSource(TalentBridgeDiagnostics.SourceName))  // custom domain spans
+    .UseAzureMonitor();  // exports traces + metrics + logs — reads APPLICATIONINSIGHTS_CONNECTION_STRING
 ```
+
+`UseAzureMonitor()` is one call from `Azure.Monitor.OpenTelemetry.AspNetCore` that wires traces, metrics, and logs to App Insights. It replaces three separate exporter calls and reads `APPLICATIONINSIGHTS_CONNECTION_STRING` automatically from the environment — which is where the Key Vault reference resolves at runtime.
 
 ### Screenshot — Program.cs telemetry block
 ![Program.cs showing AddOpenTelemetry block](ScreenShots/AI-ProgramCs.png)
