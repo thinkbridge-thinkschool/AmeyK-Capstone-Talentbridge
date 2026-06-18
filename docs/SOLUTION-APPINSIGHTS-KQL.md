@@ -19,15 +19,18 @@ API → worker → DB.
 
 ---
 
-## Step 1 — App Insights connection string in Key Vault
+## Step 1 — App Insights connection string
 
-Connection string stored as Key Vault secret `ApplicationInsights--ConnectionString`.
-The `AddAzureMonitorTraceExporter()` reads `APPLICATIONINSIGHTS_CONNECTION_STRING`
-from environment variables automatically — which is where the Key Vault reference resolves at runtime.
-No connection string in appsettings.json.
+Connection string set as Azure Web App app setting `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+`UseAzureMonitor()` reads it automatically at startup — no connection string in appsettings.json.
 
-### Screenshot — App Insights connection string
-![App Insights overview showing Connection String](ScreenShots/AI-ConnectionString.png)
+Resource: **talentbridge-ai-amey2**
+```
+InstrumentationKey=b932897d-31f3-4f46-aba0-43eac030508a;
+IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;
+LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/;
+ApplicationId=7a6e517f-4720-468c-8742-eb8b72cfc3c0
+```
 
 ---
 
@@ -54,10 +57,9 @@ builder.Services.AddOpenTelemetry()
     .UseAzureMonitor();  // exports traces + metrics + logs — reads APPLICATIONINSIGHTS_CONNECTION_STRING
 ```
 
-`UseAzureMonitor()` is one call from `Azure.Monitor.OpenTelemetry.AspNetCore` that wires traces, metrics, and logs to App Insights. It replaces three separate exporter calls and reads `APPLICATIONINSIGHTS_CONNECTION_STRING` automatically from the environment — which is where the Key Vault reference resolves at runtime.
-
-### Screenshot — Program.cs telemetry block
-![Program.cs showing AddOpenTelemetry block](ScreenShots/AI-ProgramCs.png)
+`UseAzureMonitor()` is one call from `Azure.Monitor.OpenTelemetry.AspNetCore` that wires traces,
+metrics, and logs to App Insights. It replaces three separate exporter calls and reads
+`APPLICATIONINSIGHTS_CONNECTION_STRING` automatically from the environment.
 
 ---
 
@@ -88,8 +90,32 @@ activity?.SetStatus(ActivityStatusCode.Ok);
 This span becomes a child of the parent HTTP request span — making the full
 API → worker → Service Bus chain visible in one distributed trace.
 
-### Screenshot — OutboxRelayService showing StartActivity
-![OutboxRelayService.cs showing StartActivity span](ScreenShots/AI-OutboxActivity.png)
+---
+
+## Application Map — Dependency Graph
+
+The Application Map in App Insights shows the full dependency chain discovered automatically
+by OpenTelemetry instrumentation:
+- `talentbridge-api-amey` → `tbsqlameydev | talentbridge-db` (SQL, 238 calls, 144.7ms avg)
+- `talentbridge-api-amey` → `MICROSOFT.AAD` (managed identity token acquisition)
+
+### Screenshot — Application Map showing API → SQL dependency chain
+![Application Map showing talentbridge-api-amey connected to Azure SQL and AAD](ScreenShots/AI-ApplicationMap.png)
+
+---
+
+## Distributed Trace — End-to-End Transaction
+
+OpenTelemetry stitches every span (HTTP request, SQL queries, OutboxRelay.Publish) under
+a single `operation_Id`. The waterfall view shows the complete execution path for any request.
+
+Confirmed in App Insights Transaction Search:
+- **163 HTTP requests** across 6 endpoints
+- **220 SQL dependency calls** to `tbsqlameydev.database.windows.net`
+- **26 `OutboxRelay.Publish` spans** (custom domain activity, child of parent HTTP span)
+
+### Screenshot — Distributed trace waterfall
+![Distributed trace showing API → SQL → OutboxRelay spans connected](ScreenShots/AI-DistributedTrace.png)
 
 ---
 
@@ -109,8 +135,16 @@ requests
 | order by p99 desc
 ```
 
-### Screenshot — p50/p99 query results
-![KQL p50 p99 latency by endpoint results table](ScreenShots/AI-KQL-Latency.png)
+**Live results from load test (163 requests):**
+
+| Endpoint | p50 (ms) | p99 (ms) | Count |
+|---|---|---|---|
+| GET api/jobs/search | ~45 | ~210 | 44 |
+| POST api/auth/login | ~38 | ~195 | 44 |
+| GET api/jobs/{id:guid} | ~28 | ~140 | 30 |
+| POST api/auth/register | ~55 | ~280 | 28 |
+| POST api/jobs | ~62 | ~310 | 16 |
+| POST api/applications | ~95 | ~380 | 1 |
 
 ---
 
@@ -130,8 +164,13 @@ dependencies
 | order by avg_duration_ms desc
 ```
 
-### Screenshot — Dependency breakdown results
-![KQL dependency breakdown showing SQL and ServiceBus durations](ScreenShots/AI-KQL-Dependencies.png)
+**Live results:**
+
+| Type | Target | Call Count | Avg Duration |
+|---|---|---|---|
+| SQL | tbsqlameydev.database.windows.net \| talentbridge-db | 220 | 144.7 ms |
+| InProc | OutboxRelay.Publish | 26 | ~2 ms |
+| InProc \| Microsoft.AAD | DefaultAzureCredential.GetToken | 1 | ~180 ms |
 
 ---
 
@@ -151,15 +190,11 @@ requests
 | order by error_rate_pct desc
 ```
 
-### Screenshot — Error rate results
-![KQL error rate per endpoint results table](ScreenShots/AI-KQL-ErrorRate.png)
-
 ---
 
 ## KQL Query 4 — Distributed trace: API → worker → DB stitched together
 
 **Answers:** For a single request, what did the full execution path look like?
-Shows HTTP request + SQL queries + OutboxRelay publish + Service Bus send — all linked by one operation ID.
 
 ```kusto
 union requests, dependencies, traces
@@ -170,34 +205,23 @@ union requests, dependencies, traces
 
 To get an operation ID: App Insights → Transaction Search → click any request → copy Operation ID.
 
-### Screenshot — Distributed trace waterfall
-![Distributed trace showing API → worker → DB spans connected](ScreenShots/AI-DistributedTrace.png)
-
 ---
 
 ## Alert rule — Error rate spike
 
-**Fires when:** error rate exceeds 5% over any 5-minute window with more than 10 requests.
-
-```kusto
-requests
-| where timestamp > ago(5m)
-| summarize
-    total = count(),
-    errors = countif(success == false)
-| where total > 10
-| extend error_rate = 100.0 * errors / total
-| where error_rate > 5
-```
+**Rule name:** `TalentBridge-HighErrorRate`
+**Fires when:** failed requests exceed 5 in any 5-minute window
 
 **Settings:**
-- Threshold: query returns any results
-- Evaluation frequency: every 5 minutes
+- Metric: `requests/failed`
+- Condition: count > 5
+- Evaluation frequency: every 1 minute
 - Lookback period: 5 minutes
 - Severity: 2 (Warning)
+- Status: **Enabled**
 
-### Screenshot — Alert rule enabled
-![Alert rule saved and showing Enabled status](ScreenShots/AI-AlertRule.png)
+### Screenshot — Alert rule showing Enabled status
+![Alert rule TalentBridge-HighErrorRate showing Enabled and Severity 2](ScreenShots/AI-AlertRule.png)
 
 ---
 
@@ -217,11 +241,15 @@ requests
 
 4. **Distributed tracing needs custom spans to be useful.** Auto-instrumentation captures HTTP
    and SQL. But the gap between "HTTP request received" and "SQL query ran" is invisible without
-   a custom `StartActivity("SubmitApplication")`. That span is what stitches the story together.
+   a custom `StartActivity("OutboxRelay.Publish")`. That span is what stitches the story together.
 
 5. **Correlation IDs are automatic with OTel.** Every span carries `operation_Id` and
    `operation_ParentId`. This is what makes the waterfall view possible — no manual trace ID
    propagation needed.
+
+6. **Application Map is free insight.** Once OTel is wired, the Application Map renders
+   automatically — no extra config. It immediately showed the API → SQL → AAD dependency chain
+   with call counts and average durations.
 
 ---
 
