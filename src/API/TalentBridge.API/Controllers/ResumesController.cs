@@ -12,6 +12,12 @@ public class ResumesController : ControllerBase
 {
     private readonly IMediator _mediator;
     private static readonly HashSet<string> AllowedExtensions = [".pdf", ".doc", ".docx"];
+    private static readonly HashSet<string> AllowedContentTypes =
+    [
+        "application/pdf",
+        "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
     private const long MaxFileSizeBytes = 5 * 1024 * 1024;
 
     public ResumesController(IMediator mediator) => _mediator = mediator;
@@ -23,6 +29,9 @@ public class ResumesController : ControllerBase
         var extension = Path.GetExtension(file.FileName).ToLowerInvariant();
         if (!AllowedExtensions.Contains(extension))
             return BadRequest($"File type '{extension}' is not allowed.");
+
+        if (!AllowedContentTypes.Contains(file.ContentType))
+            return BadRequest($"Content type '{file.ContentType}' is not allowed.");
 
         if (file.Length > MaxFileSizeBytes)
             return BadRequest($"File size exceeds the 5MB limit.");
