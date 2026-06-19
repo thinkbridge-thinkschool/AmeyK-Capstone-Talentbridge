@@ -20,7 +20,7 @@ jobs:
           target: 'https://talentbridge-api-amey.azurewebsites.net/swagger/v1/swagger.json'
           format: openapi
           fail_action: true
-          cmd_options: '-a -j -l HIGH'
+          cmd_options: '-a -j -l WARN'
 
       - name: Upload ZAP HTML report
         uses: actions/upload-artifact@v4
