@@ -1,0 +1,31 @@
+name: security
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  zap-api-scan:
+    name: OWASP ZAP API Scan
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: OWASP ZAP – API scan against dev environment
+        uses: zaproxy/action-api-scan@v0.9.0
+        with:
+          target: 'https://talentbridge-api-amey.azurewebsites.net/swagger/v1/swagger.json'
+          format: openapi
+          fail_action: true
+          cmd_options: '-a -j -l HIGH'
+
+      - name: Upload ZAP HTML report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: zap-report-pr-${{ github.event.pull_request.number }}
+          path: report_html.html
+          retention-days: 30
