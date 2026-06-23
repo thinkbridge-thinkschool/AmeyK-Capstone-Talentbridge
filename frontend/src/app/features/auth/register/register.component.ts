@@ -54,7 +54,7 @@ export class RegisterComponent implements OnInit {
     this.authService.register({
       email: this.form.value.email,
       password: this.form.value.password,
-      role: Number(this.form.value.role)
+      role: UserRole[this.form.value.role as UserRole]
     }).subscribe({
       next: () => {
         this.loading = false;
