@@ -12,12 +12,11 @@ on:
 
 env:
   RG: talentbridge-rg-amey
-  ACR_NAME: talentbridgeacramey
   APP_SERVICE_NAME: talentbridge-api-amey
   SWA_NAME: talentbridge-swa-amey2
 
 jobs:
-  # ── 1. Backend — Build Docker image → ACR → App Service ──────────────────────
+  # ── 1. Backend — Build .NET → Zip Deploy → App Service ───────────────────────
   deploy-backend:
     name: Build & Deploy API (App Service)
     runs-on: ubuntu-latest
@@ -25,35 +24,27 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Setup .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Publish API
+        run: |
+          dotnet publish src/API/TalentBridge.API/TalentBridge.API.csproj \
+            --configuration Release \
+            --output ./api-publish
+
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Build & push image to ACR
-        run: |
-          ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
-          docker login $ACR_NAME.azurecr.io --username $ACR_NAME --password "$ACR_PASSWORD"
-          docker build \
-            -t $ACR_NAME.azurecr.io/talentbridge-api:${{ github.sha }} \
-            -t $ACR_NAME.azurecr.io/talentbridge-api:latest \
-            .
-          docker push $ACR_NAME.azurecr.io/talentbridge-api:${{ github.sha }}
-          docker push $ACR_NAME.azurecr.io/talentbridge-api:latest
-
-      - name: Deploy image to App Service
-        run: |
-          ACR_PASSWORD=$(az acr credential show --name $ACR_NAME --query "passwords[0].value" -o tsv)
-          az webapp config container set \
-            --name $APP_SERVICE_NAME \
-            --resource-group $RG \
-            --docker-custom-image-name $ACR_NAME.azurecr.io/talentbridge-api:${{ github.sha }} \
-            --docker-registry-server-url https://$ACR_NAME.azurecr.io \
-            --docker-registry-server-user $ACR_NAME \
-            --docker-registry-server-password "$ACR_PASSWORD"
-
-      - name: Restart App Service
-        run: az webapp restart --name $APP_SERVICE_NAME --resource-group $RG
+      - name: Deploy to App Service
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ env.APP_SERVICE_NAME }}
+          package: ./api-publish
 
       - name: Show backend URL
         run: |
@@ -90,6 +81,7 @@ jobs:
           action: upload
           app_location: frontend
           output_location: dist/talentbridge-angular/browser
+          skip_app_build: true
 
   # ── 3. Summary ───────────────────────────────────────────────────────────────
   summary:
