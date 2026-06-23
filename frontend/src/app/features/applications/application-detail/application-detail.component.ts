@@ -77,8 +77,15 @@ export class ApplicationDetailComponent implements OnInit {
         this.loading = false;
       },
       error: () => {
+        // Fall back to localStorage (when deployed backend has HybridCache bug or endpoint missing)
+        const apps: JobApplication[] = JSON.parse(localStorage.getItem('tb_my_applications') ?? '[]');
+        const local = apps.find(a => a.id === id);
+        if (local) {
+          this.application = local;
+        } else {
+          this.errorMessage = 'Application not found or you do not have permission to view it.';
+        }
         this.loading = false;
-        this.errorMessage = 'Application not found or you do not have permission to view it.';
       }
     });
   }
