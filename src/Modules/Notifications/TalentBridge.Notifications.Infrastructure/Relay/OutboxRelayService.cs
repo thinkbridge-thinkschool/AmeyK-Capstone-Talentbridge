@@ -56,10 +56,7 @@ public class OutboxRelayService : BackgroundService
     {
         using var scope = _scopeFactory.CreateScope();
         var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
-
         var pending = await outboxRepository.GetPendingAsync(ct);
-        var _outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
-        var pending = await _outboxRepository.GetPendingAsync(ct);
 
         if (pending.Count == 0) return;
 
@@ -97,9 +94,8 @@ public class OutboxRelayService : BackgroundService
             }
             catch (Exception ex) when (!SimulateCrash || ex.Message != "Simulated crash after publish")
             {
-                await outboxRepository.SaveAsync(message, ct);
                 activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
-                await _outboxRepository.SaveAsync(message, ct);
+                await outboxRepository.SaveAsync(message, ct);
 
                 _logger.LogError(ex, "[OutboxRelay] Failed to relay outbox message {Id}", message.Id);
             }
