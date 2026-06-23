@@ -9,6 +9,11 @@ export interface JobApplication {
   lastUpdatedAtUtc: string;
 }
 
+export interface ApplyResponse {
+  applicationId: string;
+  status: string;
+}
+
 export interface ApplyRequest {
   candidateId: string;
   jobId: string;

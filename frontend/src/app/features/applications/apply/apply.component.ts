@@ -2,7 +2,7 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import { ApplicationService } from '../../../core/services/application.service';
+import { ApplicationService, ApplicationSummary } from '../../../core/services/application.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { JobService } from '../../../core/services/job.service';
 import { Job } from '../../../core/models/job.model';
@@ -76,11 +76,11 @@ export class ApplyComponent implements OnInit {
       coverLetter: this.form.value.coverLetter,
       resumeUrl: this.form.value.resumeUrl
     }).subscribe({
-      next: (application) => {
+      next: (res) => {
         this.loading = false;
-        // Store in localStorage so dashboard shows it even before backend is fully deployed
-        const apps = JSON.parse(localStorage.getItem('tb_my_applications') ?? '[]');
-        const appId = application.applicationId ?? application.id;
+        const appId = res.applicationId;
+        // Store in localStorage so dashboard shows it even before GET /api/applications is deployed
+        const apps: ApplicationSummary[] = JSON.parse(localStorage.getItem('tb_my_applications') ?? '[]');
         apps.unshift({
           id: appId,
           candidateId,
