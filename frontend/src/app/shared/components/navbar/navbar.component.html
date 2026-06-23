@@ -26,6 +26,13 @@
             Dashboard
           </a>
         }
+        @if (currentUser?.role === UserRole.Candidate) {
+          <a routerLink="/profile"
+             routerLinkActive="text-blue-300 border-b-2 border-blue-400"
+             class="text-slate-300 hover:text-white transition-colors text-sm font-medium pb-0.5">
+            My Profile
+          </a>
+        }
         @if (currentUser?.role === UserRole.CompanyHR || currentUser?.role === UserRole.Admin) {
           <a routerLink="/jobs/new"
              routerLinkActive="text-blue-300 border-b-2 border-blue-400"
@@ -83,6 +90,10 @@
         @if (currentUser) {
           <a [routerLink]="dashboardRoute" (click)="mobileMenuOpen=false"
              class="block text-slate-300 hover:text-white py-2 text-sm font-medium">Dashboard</a>
+        }
+        @if (currentUser?.role === UserRole.Candidate) {
+          <a routerLink="/profile" (click)="mobileMenuOpen=false"
+             class="block text-slate-300 hover:text-white py-2 text-sm font-medium">My Profile</a>
         }
         @if (currentUser?.role === UserRole.CompanyHR || currentUser?.role === UserRole.Admin) {
           <a routerLink="/jobs/new" (click)="mobileMenuOpen=false"

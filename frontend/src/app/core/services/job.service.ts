@@ -1,8 +1,9 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Job, JobSearchResult, PostJobRequest } from '../models/job.model';
+import { Job, JobSearchResult, PostJobRequest, normalizeJobStatus } from '../models/job.model';
 
 @Injectable({ providedIn: 'root' })
 export class JobService {
@@ -22,11 +23,22 @@ export class JobService {
     if (keyword) params = params.set('keyword', keyword);
     if (location) params = params.set('location', location);
 
-    return this.http.get<JobSearchResult>(`${this.apiUrl}/api/jobs/search`, { params });
+    return this.http.get<Job[] | JobSearchResult>(`${this.apiUrl}/api/jobs/search`, { params }).pipe(
+      map(resp => {
+        if (Array.isArray(resp)) {
+          const items = resp.map(j => ({ ...j, status: normalizeJobStatus(j.status) }));
+          return { items, totalCount: items.length };
+        }
+        const items = (resp as JobSearchResult).items.map(j => ({ ...j, status: normalizeJobStatus(j.status) }));
+        return { items, totalCount: (resp as JobSearchResult).totalCount };
+      })
+    );
   }
 
   getJob(id: string): Observable<Job> {
-    return this.http.get<Job>(`${this.apiUrl}/api/jobs/${id}`);
+    return this.http.get<Job>(`${this.apiUrl}/api/jobs/${id}`).pipe(
+      map(j => ({ ...j, status: normalizeJobStatus(j.status) }))
+    );
   }
 
   postJob(req: PostJobRequest): Observable<any> {
