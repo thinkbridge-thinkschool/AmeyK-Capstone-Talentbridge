@@ -71,7 +71,7 @@ export class JobDetailComponent implements OnInit {
     this.actionSuccess = '';
     this.actionError = '';
 
-    this.jobService.publishJob(this.job.id).subscribe({
+    this.jobService.publishJob(this.job.id, this.job.companyId).subscribe({
       next: () => {
         this.actionLoading = false;
         this.actionSuccess = 'Job published successfully!';
@@ -90,7 +90,7 @@ export class JobDetailComponent implements OnInit {
     this.actionSuccess = '';
     this.actionError = '';
 
-    this.jobService.closeJob(this.job.id).subscribe({
+    this.jobService.closeJob(this.job.id, this.job.companyId).subscribe({
       next: () => {
         this.actionLoading = false;
         this.actionSuccess = 'Job closed successfully.';

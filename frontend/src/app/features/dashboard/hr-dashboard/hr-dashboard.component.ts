@@ -2,6 +2,8 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { AuthService, CurrentUser } from '../../../core/auth/auth.service';
+import { JobService } from '../../../core/services/job.service';
+import { Job } from '../../../core/models/job.model';
 
 @Component({
   selector: 'app-hr-dashboard',
@@ -11,19 +13,30 @@ import { AuthService, CurrentUser } from '../../../core/auth/auth.service';
 })
 export class HrDashboardComponent implements OnInit {
   private authService = inject(AuthService);
+  private jobService = inject(JobService);
 
   currentUser: CurrentUser | null = null;
-
-  workflowSteps = [
-    { icon: '1', title: 'Post Job', desc: 'Create and publish a job listing' },
-    { icon: '2', title: 'Receive Apps', desc: 'Candidates submit applications' },
-    { icon: '3', title: 'Review', desc: 'Move apps through review pipeline' },
-    { icon: '4', title: 'Accept', desc: 'Accept the best candidates' }
-  ];
+  recentJobs: Job[] = [];
+  loadingJobs = true;
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
     });
+
+    this.jobService.searchJobs('', '', 1, 5).subscribe({
+      next: res => { this.recentJobs = res.items; this.loadingJobs = false; },
+      error: () => { this.loadingJobs = false; }
+    });
+  }
+
+  statusClass(status: string): string {
+    const map: Record<string, string> = {
+      Draft: 'bg-gray-100 text-gray-600',
+      Active: 'bg-green-100 text-green-700',
+      Closed: 'bg-red-100 text-red-600',
+      Expired: 'bg-orange-100 text-orange-600'
+    };
+    return map[status] ?? 'bg-gray-100 text-gray-500';
   }
 }

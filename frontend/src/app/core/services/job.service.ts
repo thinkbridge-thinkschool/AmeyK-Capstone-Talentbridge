@@ -13,11 +13,11 @@ export class JobService {
     keyword: string = '',
     location: string = '',
     page: number = 1,
-    pageSize: number = 10
+    size: number = 10
   ): Observable<JobSearchResult> {
     let params = new HttpParams()
       .set('page', page.toString())
-      .set('pageSize', pageSize.toString());
+      .set('size', size.toString());
 
     if (keyword) params = params.set('keyword', keyword);
     if (location) params = params.set('location', location);
@@ -29,15 +29,15 @@ export class JobService {
     return this.http.get<Job>(`${this.apiUrl}/api/jobs/${id}`);
   }
 
-  postJob(req: PostJobRequest): Observable<Job> {
-    return this.http.post<Job>(`${this.apiUrl}/api/jobs`, req);
+  postJob(req: PostJobRequest): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/api/jobs`, req);
   }
 
-  publishJob(id: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/api/jobs/${id}/publish`, {});
+  publishJob(id: string, companyId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/api/jobs/${id}/publish?companyId=${companyId}`, {});
   }
 
-  closeJob(id: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/api/jobs/${id}/close`, {});
+  closeJob(id: string, companyId: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/api/jobs/${id}/close?companyId=${companyId}`, {});
   }
 }

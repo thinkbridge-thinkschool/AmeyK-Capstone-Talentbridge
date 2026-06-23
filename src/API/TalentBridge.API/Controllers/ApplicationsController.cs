@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using TalentBridge.Applications.Application.Commands.Apply;
 using TalentBridge.Applications.Application.Commands.UpdateStatus;
 using TalentBridge.Applications.Application.Queries.GetApplication;
+using TalentBridge.Applications.Application.Queries.GetApplications;
 
 namespace TalentBridge.API.Controllers;
 
@@ -14,6 +15,17 @@ public class ApplicationsController : ControllerBase
     private readonly IMediator _mediator;
 
     public ApplicationsController(IMediator mediator) => _mediator = mediator;
+
+    [HttpGet]
+    [Authorize]
+    public async Task<IActionResult> GetApplications(
+        [FromQuery] Guid? candidateId,
+        [FromQuery] Guid? jobId,
+        CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetApplicationsQuery(candidateId, jobId), ct);
+        return Ok(result);
+    }
 
     [HttpPost]
     [Authorize(Roles = "Candidate")]

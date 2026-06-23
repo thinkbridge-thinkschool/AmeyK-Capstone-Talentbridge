@@ -12,18 +12,13 @@
         <div>
           <p class="text-blue-200 text-sm font-medium mb-1">Welcome back,</p>
           <h1 class="text-2xl font-bold">{{ currentUser?.email ?? 'Candidate' }}</h1>
-          <span class="inline-block bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full mt-1">
-            Candidate
-          </span>
+          <span class="inline-block bg-blue-500 text-white text-xs font-semibold px-3 py-1 rounded-full mt-1">Candidate</span>
         </div>
       </div>
     </div>
 
     <!-- Quick actions -->
-    <h2 class="text-xl font-bold text-gray-900 mb-5">Quick Actions</h2>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
-
-      <!-- Browse jobs -->
       <a routerLink="/jobs"
         class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group">
         <div class="flex items-start gap-4">
@@ -39,9 +34,8 @@
         </div>
       </a>
 
-      <!-- My applications (placeholder — no endpoint for listing by candidate in spec) -->
       <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
-        <div class="flex items-start gap-4">
+        <div class="flex items-center gap-4">
           <div class="w-12 h-12 rounded-xl bg-purple-100 flex items-center justify-center flex-shrink-0">
             <svg class="w-6 h-6 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
@@ -49,68 +43,48 @@
           </div>
           <div>
             <h3 class="font-semibold text-gray-900">My Applications</h3>
-            <p class="text-gray-500 text-sm mt-1">Track your submitted applications and their status</p>
-            <p class="text-xs text-amber-600 mt-2 bg-amber-50 px-2 py-1 rounded-md inline-block">Save your application ID after applying to track it</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Profile (placeholder) -->
-      <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm opacity-75">
-        <div class="flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-            <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-          <div>
-            <h3 class="font-semibold text-gray-500">My Profile</h3>
-            <p class="text-gray-400 text-sm mt-1">Update your professional profile</p>
-            <span class="text-xs text-gray-400 mt-2 inline-block">Coming soon</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Saved jobs (placeholder) -->
-      <div class="bg-white rounded-2xl p-6 border border-gray-100 shadow-sm opacity-75">
-        <div class="flex items-start gap-4">
-          <div class="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center flex-shrink-0">
-            <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"/>
-            </svg>
-          </div>
-          <div>
-            <h3 class="font-semibold text-gray-500">Saved Jobs</h3>
-            <p class="text-gray-400 text-sm mt-1">Jobs you've bookmarked for later</p>
-            <span class="text-xs text-gray-400 mt-2 inline-block">Coming soon</span>
+            <p class="text-gray-500 text-sm">{{ applications.length }} submitted</p>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Tips section -->
+    <!-- Applications list -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-      <h2 class="font-bold text-gray-900 mb-4">Job Search Tips</h2>
-      <ul class="space-y-3">
-        <li class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <p class="text-gray-600 text-sm">Search by keyword or location to find relevant opportunities quickly.</p>
-        </li>
-        <li class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <p class="text-gray-600 text-sm">Write a tailored cover letter for each application to stand out from the crowd.</p>
-        </li>
-        <li class="flex items-start gap-3">
-          <svg class="w-5 h-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          <p class="text-gray-600 text-sm">Keep your resume link up to date and publicly accessible when applying.</p>
-        </li>
-      </ul>
+      <h2 class="font-bold text-gray-900 mb-5">My Applications</h2>
+
+      @if (loadingApps) {
+        <div class="space-y-3">
+          @for (i of [1,2,3]; track i) {
+            <div class="h-16 bg-gray-100 rounded-xl animate-pulse"></div>
+          }
+        </div>
+      } @else if (appsError) {
+        <p class="text-red-500 text-sm">{{ appsError }}</p>
+      } @else if (applications.length === 0) {
+        <div class="text-center py-10">
+          <p class="text-gray-500 mb-3">No applications yet.</p>
+          <a routerLink="/jobs" class="text-blue-600 font-medium hover:underline text-sm">Browse open jobs →</a>
+        </div>
+      } @else {
+        <div class="divide-y divide-gray-100">
+          @for (app of applications; track app.id) {
+            <div class="py-4 flex items-center justify-between gap-4">
+              <div class="min-w-0">
+                <p class="text-xs text-gray-400 font-mono truncate">Job: {{ app.jobId }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">Applied {{ formatDate(app.submittedAtUtc) }}</p>
+              </div>
+              <div class="flex items-center gap-3 flex-shrink-0">
+                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ statusClass(app.status) }}">
+                  {{ app.status }}
+                </span>
+                <a [routerLink]="['/applications', app.id]"
+                  class="text-xs text-blue-600 hover:underline font-medium">View →</a>
+              </div>
+            </div>
+          }
+        </div>
+      }
     </div>
   </div>
 </div>

@@ -49,7 +49,15 @@ export class LoginComponent implements OnInit {
 
     this.authService.login(this.form.value).subscribe({
       next: () => {
-        this.router.navigate([this.returnUrl]);
+        if (this.returnUrl !== '/jobs') {
+          this.router.navigate([this.returnUrl]);
+        } else if (this.authService.isHR()) {
+          this.router.navigate(['/dashboard/hr']);
+        } else if (this.authService.isCandidate()) {
+          this.router.navigate(['/dashboard/candidate']);
+        } else {
+          this.router.navigate(['/jobs']);
+        }
       },
       error: (err) => {
         this.loading = false;

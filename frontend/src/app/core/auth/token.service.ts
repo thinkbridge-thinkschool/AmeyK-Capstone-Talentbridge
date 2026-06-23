@@ -43,7 +43,7 @@ export class TokenService {
       || null;
   }
 
-  getRole(): number | null {
+  getRole(): string | null {
     const decoded = this.decodeToken();
     if (!decoded) return null;
     const roleVal = decoded['role']
@@ -51,7 +51,7 @@ export class TokenService {
       ?? decoded['roles']
       ?? null;
     if (roleVal === null || roleVal === undefined) return null;
-    return Number(roleVal);
+    return String(roleVal);
   }
 
   getEmail(): string | null {

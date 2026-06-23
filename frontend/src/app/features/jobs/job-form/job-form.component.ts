@@ -33,7 +33,7 @@ export class JobFormComponent implements OnInit {
       location: ['', [Validators.required]],
       salaryMin: [null, [Validators.required, Validators.min(0)]],
       salaryMax: [null, [Validators.required, Validators.min(0)]],
-      companyId: ['', [Validators.required]],
+      companyId: [userId, [Validators.required]],
       postedByHRId: [userId, [Validators.required]]
     }, { validators: this.salaryRangeValidator });
   }

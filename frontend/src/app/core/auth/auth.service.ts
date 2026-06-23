@@ -8,7 +8,7 @@ import { AuthResponse, LoginRequest, RegisterRequest, UserRole } from '../models
 
 export interface CurrentUser {
   email: string;
-  role: number;
+  role: string;
   userId: string;
 }
 
@@ -55,7 +55,7 @@ export class AuthService {
     return this.tokenService.isLoggedIn();
   }
 
-  getRole(): number | null {
+  getRole(): string | null {
     return this.tokenService.getRole();
   }
 

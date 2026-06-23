@@ -11,12 +11,12 @@ export interface RegisterRequest {
 
 export interface AuthResponse {
   token: string;
-  email: string;
-  role: number;
+  expiresAt: string;
+  userRole: string;
 }
 
 export enum UserRole {
-  Candidate = 0,
-  CompanyHR = 1,
-  Admin = 2
+  Candidate = 'Candidate',
+  CompanyHR = 'CompanyHR',
+  Admin = 'Admin'
 }

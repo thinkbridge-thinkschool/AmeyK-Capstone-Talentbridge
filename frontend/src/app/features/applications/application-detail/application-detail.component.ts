@@ -32,6 +32,14 @@ export class ApplicationDetailComponent implements OnInit {
   get isAdmin(): boolean { return this.authService.getRole() === UserRole.Admin; }
   get isCandidate(): boolean { return this.authService.getRole() === UserRole.Candidate; }
 
+  private readonly actionToStatus: Record<ApplicationAction, string> = {
+    StartReview: 'UnderReview',
+    Shortlist: 'Shortlisted',
+    Accept: 'Accepted',
+    Reject: 'Rejected',
+    Withdraw: 'Withdrawn'
+  };
+
   get hrActions(): { label: string; action: ApplicationAction; class: string }[] {
     if (!this.application) return [];
     const status = this.application.status;
@@ -40,10 +48,11 @@ export class ApplicationDetailComponent implements OnInit {
     if (status === 'Submitted') {
       actions.push({ label: 'Start Review', action: 'StartReview', class: 'bg-yellow-500 hover:bg-yellow-600 text-white' });
     }
-    if (status === 'Submitted' || status === 'UnderReview') {
+    if (status === 'UnderReview') {
       actions.push({ label: 'Shortlist', action: 'Shortlist', class: 'bg-purple-600 hover:bg-purple-700 text-white' });
+      actions.push({ label: 'Reject', action: 'Reject', class: 'bg-red-600 hover:bg-red-700 text-white' });
     }
-    if (status === 'Shortlisted' || status === 'UnderReview') {
+    if (status === 'Shortlisted') {
       actions.push({ label: 'Accept', action: 'Accept', class: 'bg-green-600 hover:bg-green-700 text-white' });
       actions.push({ label: 'Reject', action: 'Reject', class: 'bg-red-600 hover:bg-red-700 text-white' });
     }
@@ -80,20 +89,14 @@ export class ApplicationDetailComponent implements OnInit {
     this.actionSuccess = '';
     this.actionError = '';
 
-    this.applicationService.updateStatus(this.application.id, action).subscribe({
+    const newStatus = this.actionToStatus[action];
+    this.applicationService.updateStatus(this.application.id, newStatus).subscribe({
       next: () => {
         this.actionLoading = false;
-        const statusMap: Record<ApplicationAction, string> = {
-          StartReview: 'UnderReview',
-          Shortlist: 'Shortlisted',
-          Accept: 'Accepted',
-          Reject: 'Rejected',
-          Withdraw: 'Withdrawn'
-        };
         if (this.application) {
-          this.application = { ...this.application, status: statusMap[action] };
+          this.application = { ...this.application, status: newStatus };
         }
-        this.actionSuccess = `Status updated to ${statusMap[action]}.`;
+        this.actionSuccess = `Status updated to ${newStatus}.`;
       },
       error: (err) => {
         this.actionLoading = false;
