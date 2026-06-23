@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using TalentBridge.Applications.Infrastructure.Persistence;
 
@@ -11,9 +12,11 @@ using TalentBridge.Applications.Infrastructure.Persistence;
 namespace TalentBridge.Applications.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationsDbContext))]
-    partial class ApplicationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260623050542_UpdateSchema")]
+    partial class UpdateSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

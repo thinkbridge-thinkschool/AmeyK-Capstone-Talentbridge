@@ -14,35 +14,41 @@
     </div>
 
     <!-- Job context card -->
-    <div *ngIf="job" class="bg-white rounded-2xl border border-blue-100 p-5 mb-6 shadow-sm">
-      <div class="flex items-start justify-between">
-        <div>
-          <h2 class="font-bold text-gray-900 text-lg">{{ job.title }}</h2>
-          <p class="text-gray-500 text-sm mt-1 flex items-center gap-1.5">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-            </svg>
-            {{ job.location }}
-          </p>
+    @if (job) {
+      <div class="bg-white rounded-2xl border border-blue-100 p-5 mb-6 shadow-sm">
+        <div class="flex items-start justify-between">
+          <div>
+            <h2 class="font-bold text-gray-900 text-lg">{{ job.title }}</h2>
+            <p class="text-gray-500 text-sm mt-1 flex items-center gap-1.5">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              {{ job.location }}
+            </p>
+          </div>
+          <span class="text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-lg">
+            ${{ job.salaryMin | number }}&ndash;${{ job.salaryMax | number }}/yr
+          </span>
         </div>
-        <span class="text-sm font-medium text-blue-700 bg-blue-50 px-3 py-1 rounded-lg">
-          ${{ job.salaryMin | number }}&ndash;${{ job.salaryMax | number }}/yr
-        </span>
       </div>
-    </div>
+    }
 
     <!-- Success -->
-    <div *ngIf="successMessage" class="mb-5 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2">
-      <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-      </svg>
-      {{ successMessage }}
-    </div>
+    @if (successMessage) {
+      <div class="mb-5 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2">
+        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+        </svg>
+        {{ successMessage }}
+      </div>
+    }
 
     <!-- Error -->
-    <div *ngIf="errorMessage" class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-      {{ errorMessage }}
-    </div>
+    @if (errorMessage) {
+      <div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+        {{ errorMessage }}
+      </div>
+    }
 
     <!-- Form -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -59,10 +65,16 @@
               (f['resumeUrl'].invalid && f['resumeUrl'].touched ? 'border-red-400 bg-red-50' : 'border-gray-300')"
           />
           <p class="mt-1 text-xs text-gray-400">Link to your resume (Google Drive, Dropbox, LinkedIn, etc.)</p>
-          <div *ngIf="f['resumeUrl'].invalid && f['resumeUrl'].touched" class="mt-1.5 text-xs text-red-600">
-            <span *ngIf="f['resumeUrl'].errors?.['required']">Resume URL is required.</span>
-            <span *ngIf="f['resumeUrl'].errors?.['pattern']">Please provide a valid URL starting with http:// or https://</span>
-          </div>
+          @if (f['resumeUrl'].invalid && f['resumeUrl'].touched) {
+            <div class="mt-1.5 text-xs text-red-600">
+              @if (f['resumeUrl'].errors?.['required']) {
+                <span>Resume URL is required.</span>
+              }
+              @if (f['resumeUrl'].errors?.['pattern']) {
+                <span>Please provide a valid URL starting with http:// or https://</span>
+              }
+            </div>
+          }
         </div>
 
         <!-- Cover Letter -->
@@ -76,10 +88,16 @@
               (f['coverLetter'].invalid && f['coverLetter'].touched ? 'border-red-400 bg-red-50' : 'border-gray-300')"
           ></textarea>
           <div class="flex justify-between mt-1.5">
-            <div *ngIf="f['coverLetter'].invalid && f['coverLetter'].touched" class="text-xs text-red-600">
-              <span *ngIf="f['coverLetter'].errors?.['required']">Cover letter is required.</span>
-              <span *ngIf="f['coverLetter'].errors?.['minlength']">Cover letter must be at least 50 characters.</span>
-            </div>
+            @if (f['coverLetter'].invalid && f['coverLetter'].touched) {
+              <div class="text-xs text-red-600">
+                @if (f['coverLetter'].errors?.['required']) {
+                  <span>Cover letter is required.</span>
+                }
+                @if (f['coverLetter'].errors?.['minlength']) {
+                  <span>Cover letter must be at least 50 characters.</span>
+                }
+              </div>
+            }
             <span class="text-xs text-gray-400 ml-auto">{{ form.value.coverLetter?.length ?? 0 }}/2000</span>
           </div>
         </div>
@@ -101,10 +119,12 @@
             type="submit"
             [disabled]="loading"
             class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed text-white font-semibold py-3 rounded-xl transition-colors flex items-center justify-center gap-2">
-            <svg *ngIf="loading" class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
-              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-            </svg>
+            @if (loading) {
+              <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+            }
             {{ loading ? 'Submitting...' : 'Submit Application' }}
           </button>
           <a [routerLink]="job ? ['/jobs', job.id] : '/jobs'"

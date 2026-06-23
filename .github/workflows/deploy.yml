@@ -14,52 +14,13 @@ env:
   RG: talentbridge-rg-amey
   ACR_NAME: talentbridgeacramey
   APP_SERVICE_NAME: talentbridge-api-amey
-  SWA_NAME: talentbridge-swa-amey
+  SWA_NAME: talentbridge-swa-amey2
 
 jobs:
-  # ── 1. Infrastructure — Azure Deployment Stack ───────────────────────────────
-  deploy-infra:
-    name: Provision Infrastructure (Deployment Stack)
-    runs-on: ubuntu-latest
-    environment: ${{ github.event.inputs.environment }}
-    outputs:
-      swa_url: ${{ steps.stack-out.outputs.swa_url }}
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Deploy Deployment Stack
-        run: |
-          az stack group create \
-            --name talentbridge-stack-${{ github.event.inputs.environment }} \
-            --resource-group $RG \
-            --template-file infra/main.bicep \
-            --parameters infra/parameters/${{ github.event.inputs.environment }}.bicepparam \
-            --action-on-unmanage deleteAll \
-            --deny-settings-mode none \
-            --yes
-
-      - name: Get stack outputs
-        id: stack-out
-        run: |
-          SWA_URL=$(az stack group show \
-            --name talentbridge-stack-${{ github.event.inputs.environment }} \
-            --resource-group $RG \
-            --query "outputs.staticWebAppUrl.value" -o tsv)
-          echo "swa_url=$SWA_URL" >> $GITHUB_OUTPUT
-          echo "Static Web App: $SWA_URL"
-
-  # ── 2. Backend — Build Docker image → ACR → App Service ─────────────────────
+  # ── 1. Backend — Build Docker image → ACR → App Service ──────────────────────
   deploy-backend:
     name: Build & Deploy API (App Service)
     runs-on: ubuntu-latest
-    needs: deploy-infra
-    environment: ${{ github.event.inputs.environment }}
 
     steps:
       - uses: actions/checkout@v4
@@ -94,14 +55,13 @@ jobs:
       - name: Show backend URL
         run: |
           URL=$(az webapp show --name $APP_SERVICE_NAME --resource-group $RG --query "defaultHostName" -o tsv)
-          echo "Backend live at: https://$URL"
+          echo "Backend : https://$URL"
+          echo "Swagger : https://$URL/swagger"
 
-  # ── 3. Frontend — Build Angular → Azure Static Web App ───────────────────────
+  # ── 2. Frontend — Build Angular → Azure Static Web App ───────────────────────
   deploy-frontend:
     name: Build Angular & Deploy Frontend (SWA)
     runs-on: ubuntu-latest
-    needs: deploy-infra
-    environment: ${{ github.event.inputs.environment }}
 
     steps:
       - uses: actions/checkout@v4
@@ -117,7 +77,7 @@ jobs:
 
       - name: Build Angular (production)
         working-directory: frontend
-        run: npm run build:prod
+        run: npx ng build --configuration production
 
       - name: Deploy to Static Web App
         uses: Azure/static-web-apps-deploy@v1
@@ -128,21 +88,27 @@ jobs:
           app_location: frontend
           output_location: dist/talentbridge-angular/browser
 
-  # ── 4. Summary ───────────────────────────────────────────────────────────────
+  # ── 3. Summary ───────────────────────────────────────────────────────────────
   summary:
     name: Deployment Summary
     runs-on: ubuntu-latest
-    needs: [deploy-infra, deploy-backend, deploy-frontend]
+    needs: [deploy-backend, deploy-frontend]
     if: always()
 
     steps:
-      - name: Print URLs
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Print live URLs
         run: |
+          BACKEND=$(az webapp show --name $APP_SERVICE_NAME --resource-group $RG --query "defaultHostName" -o tsv)
           echo "======================================"
           echo "  TalentBridge Deployment Complete"
           echo "======================================"
           echo "  Environment : ${{ github.event.inputs.environment }}"
-          echo "  Stack       : talentbridge-stack-${{ github.event.inputs.environment }}"
-          echo "  Frontend    : ${{ needs.deploy-infra.outputs.swa_url }}"
-          echo "  Backend     : https://talentbridge-api-amey.azurewebsites.net"
+          echo "  Backend     : https://$BACKEND"
+          echo "  Swagger     : https://$BACKEND/swagger"
+          echo "  Frontend    : [SWA — $SWA_NAME]"
           echo "======================================"
