@@ -55,7 +55,7 @@ jobs:
   # ── 2. Frontend — Build Angular → Azure Static Web App ───────────────────────
   deploy-frontend:
     name: Build Angular & Deploy Frontend (SWA)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
