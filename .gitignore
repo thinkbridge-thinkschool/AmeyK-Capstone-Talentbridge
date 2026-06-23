@@ -42,6 +42,11 @@ coverage/
 
 # Publish output
 publish/
+publish-output/
+
+# Deploy artifacts
+deploy.zip
+*.zip
 
 # Angular frontend
 frontend/node_modules/

@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,6 +11,10 @@ namespace TalentBridge.Notifications.Infrastructure.Relay;
 public class OutboxRelayService : BackgroundService
 {
     public static bool SimulateCrash { get; set; } = false;
+
+    // ActivitySource name must match the source registered in Program.cs AddSource()
+    private static readonly ActivitySource _activitySource =
+        new("TalentBridge.Application", "1.0.0");
 
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ServiceBusClient _serviceBusClient;
@@ -53,6 +58,8 @@ public class OutboxRelayService : BackgroundService
         var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
 
         var pending = await outboxRepository.GetPendingAsync(ct);
+        var _outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
+        var pending = await _outboxRepository.GetPendingAsync(ct);
 
         if (pending.Count == 0) return;
 
@@ -62,6 +69,10 @@ public class OutboxRelayService : BackgroundService
 
         foreach (var message in pending)
         {
+            using var activity = _activitySource.StartActivity("OutboxRelay.Publish");
+            activity?.SetTag("messageType", message.Type);
+            activity?.SetTag("messageId", message.Id.ToString());
+
             try
             {
                 var sbMessage = new ServiceBusMessage(message.Payload)
@@ -81,11 +92,14 @@ public class OutboxRelayService : BackgroundService
                 message.ProcessedOnUtc = DateTime.UtcNow;
                 await outboxRepository.SaveAsync(message, ct);
 
+                activity?.SetStatus(ActivityStatusCode.Ok);
                 _logger.LogInformation("[OutboxRelay] Relayed outbox message {Id} ({Type})", message.Id, message.Type);
             }
             catch (Exception ex) when (!SimulateCrash || ex.Message != "Simulated crash after publish")
             {
                 await outboxRepository.SaveAsync(message, ct);
+                activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                await _outboxRepository.SaveAsync(message, ct);
 
                 _logger.LogError(ex, "[OutboxRelay] Failed to relay outbox message {Id}", message.Id);
             }

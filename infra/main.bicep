@@ -69,6 +69,29 @@ module appInsights 'modules/appinsights.bicep' = {
   }
 }
 
+// ── VNet (private-endpoint subnet for SQL; container-apps subnet for ACA) ────
+module vnet 'modules/vnet.bicep' = {
+  name: 'vnet-deploy'
+  params: {
+    vnetName: '${appName}-vnet-${suffix}'
+    location: location
+  }
+}
+
+// NOTE: SQL module excluded from active deployment (student subscription limits).
+// On a paid subscription, wire it up like this:
+// module sql 'modules/sql.bicep' = {
+//   name: 'sql-deploy'
+//   params: {
+//     serverName: '${appName}sql${suffix}'
+//     location: location
+//     adminLogin: 'tbadmin'
+//     adminPassword: <secure-param>
+//     privateEndpointsSubnetId: vnet.outputs.privateEndpointsSubnetId
+//     vnetId: vnet.outputs.vnetId
+//   }
+// }
+
 // ── Service Bus ───────────────────────────────────────────────────────────────
 module serviceBus 'modules/servicebus.bicep' = {
   name: 'servicebus-deploy'
