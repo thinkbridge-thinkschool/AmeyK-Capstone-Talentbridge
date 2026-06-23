@@ -13,17 +13,27 @@ on:
 env:
   RG: talentbridge-rg-amey
   APP_SERVICE_NAME: talentbridge-api-amey
-  SWA_NAME: talentbridge-swa-amey2
 
 jobs:
-  # ── 1. Backend — Build .NET → Zip Deploy → App Service ───────────────────────
-  deploy-backend:
-    name: Build & Deploy API (App Service)
-    runs-on: ubuntu-latest
+  # ── Single job: Build Angular + .NET → bundle → deploy ───────────────────────
+  deploy:
+    name: Build & Deploy Full Stack
+    runs-on: ubuntu-22.04
 
     steps:
       - uses: actions/checkout@v4
 
+      # ── Angular build ─────────────────────────────────────────────────────────
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build Angular (production)
+        working-directory: frontend
+        run: npm install && npx ng build --configuration production
+
+      # ── .NET build ────────────────────────────────────────────────────────────
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
@@ -35,6 +45,13 @@ jobs:
             --configuration Release \
             --output ./api-publish
 
+      # ── Bundle Angular into wwwroot ───────────────────────────────────────────
+      - name: Bundle Angular into wwwroot
+        run: |
+          mkdir -p api-publish/wwwroot
+          cp -r frontend/dist/talentbridge-angular/browser/. api-publish/wwwroot/
+
+      # ── Deploy ────────────────────────────────────────────────────────────────
       - name: Azure Login
         uses: azure/login@v2
         with:
@@ -46,61 +63,13 @@ jobs:
           app-name: ${{ env.APP_SERVICE_NAME }}
           package: ./api-publish
 
-      - name: Show backend URL
+      - name: Show live URLs
         run: |
           URL=$(az webapp show --name $APP_SERVICE_NAME --resource-group $RG --query "defaultHostName" -o tsv)
-          echo "Backend : https://$URL"
-          echo "Swagger : https://$URL/swagger"
-
-  # ── 2. Frontend — Build Angular → Azure Static Web App ───────────────────────
-  deploy-frontend:
-    name: Build Angular & Deploy Frontend (SWA)
-    runs-on: ubuntu-22.04
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Node 20
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        working-directory: frontend
-        run: npm install
-
-      - name: Build Angular (production)
-        working-directory: frontend
-        run: npx ng build --configuration production
-
-      - name: Install SWA CLI & Deploy
-        run: |
-          npm install -g @azure/static-web-apps-cli@1.1.10
-          swa deploy frontend/dist/talentbridge-angular/browser \
-            --deployment-token "${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}" \
-            --verbose
-
-  # ── 3. Summary ───────────────────────────────────────────────────────────────
-  summary:
-    name: Deployment Summary
-    runs-on: ubuntu-latest
-    needs: [deploy-backend, deploy-frontend]
-    if: always()
-
-    steps:
-      - name: Azure Login
-        uses: azure/login@v2
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
-      - name: Print live URLs
-        run: |
-          BACKEND=$(az webapp show --name $APP_SERVICE_NAME --resource-group $RG --query "defaultHostName" -o tsv)
           echo "======================================"
-          echo "  TalentBridge Deployment Complete"
+          echo "  TalentBridge is LIVE"
           echo "======================================"
           echo "  Environment : ${{ github.event.inputs.environment }}"
-          echo "  Backend     : https://$BACKEND"
-          echo "  Swagger     : https://$BACKEND/swagger"
-          echo "  Frontend    : [SWA — $SWA_NAME]"
+          echo "  App         : https://$URL"
+          echo "  Swagger     : https://$URL/swagger"
           echo "======================================"

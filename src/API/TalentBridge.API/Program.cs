@@ -121,6 +121,9 @@ using (var scope = app.Services.CreateScope())
 }
 
 // ── Pipeline ──────────────────────────────────────────────────────────────────
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
 app.UseSwagger();
 app.UseSwaggerUI(c =>
 {
@@ -133,5 +136,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapResilienceEndpoints();
+app.MapFallbackToFile("index.html");
 
 app.Run();
