@@ -13,6 +13,7 @@ export interface ApplicationSummary {
   resumeUrl: string;
   submittedAtUtc: string;
   lastUpdatedAtUtc: string;
+  jobTitle?: string;
 }
 
 @Injectable({ providedIn: 'root' })

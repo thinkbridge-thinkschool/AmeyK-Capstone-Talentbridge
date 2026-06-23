@@ -78,8 +78,23 @@ export class ApplyComponent implements OnInit {
     }).subscribe({
       next: (application) => {
         this.loading = false;
+        // Store in localStorage so dashboard shows it even before backend is fully deployed
+        const apps = JSON.parse(localStorage.getItem('tb_my_applications') ?? '[]');
+        const appId = application.applicationId ?? application.id;
+        apps.unshift({
+          id: appId,
+          candidateId,
+          jobId: this.jobId,
+          status: 'Submitted',
+          coverLetter: this.form.value.coverLetter,
+          resumeUrl: this.form.value.resumeUrl,
+          submittedAtUtc: new Date().toISOString(),
+          lastUpdatedAtUtc: new Date().toISOString(),
+          jobTitle: this.job?.title ?? ''
+        });
+        localStorage.setItem('tb_my_applications', JSON.stringify(apps.slice(0, 50)));
         this.successMessage = 'Application submitted successfully!';
-        setTimeout(() => this.router.navigate(['/applications', application.id]), 1800);
+        setTimeout(() => this.router.navigate(['/applications', appId]), 1800);
       },
       error: (err) => {
         this.loading = false;

@@ -69,8 +69,13 @@ export class JobFormComponent implements OnInit {
     }).subscribe({
       next: (job) => {
         this.loading = false;
-        this.successMessage = 'Job posted successfully! Redirecting...';
-        setTimeout(() => this.router.navigate(['/jobs', job.id]), 1500);
+        // Track draft jobs in localStorage so HR dashboard can show them
+        const jobId = job.jobId ?? job.id;
+        const drafts = JSON.parse(localStorage.getItem('tb_draft_jobs') ?? '[]');
+        drafts.unshift({ id: jobId, title: this.form.value.title, location: this.form.value.location, status: 'Draft', createdAtUtc: new Date().toISOString() });
+        localStorage.setItem('tb_draft_jobs', JSON.stringify(drafts.slice(0, 20)));
+        this.successMessage = 'Job posted successfully! Redirecting to publish...';
+        setTimeout(() => this.router.navigate(['/jobs', jobId]), 1500);
       },
       error: (err) => {
         this.loading = false;

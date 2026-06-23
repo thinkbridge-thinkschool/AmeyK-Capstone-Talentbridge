@@ -50,10 +50,41 @@
       </a>
     </div>
 
-    <!-- Recent jobs -->
+    <!-- Draft jobs pending publish -->
+    @if (draftJobs.length > 0) {
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-5">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="font-bold text-amber-900 flex items-center gap-2">
+            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            Draft Jobs — Needs Publishing
+          </h2>
+          <span class="text-xs text-amber-700 font-medium bg-amber-100 px-2 py-1 rounded-full">{{ draftJobs.length }} pending</span>
+        </div>
+        <div class="divide-y divide-amber-100">
+          @for (job of draftJobs; track job.id) {
+            <div class="py-3 flex items-center justify-between gap-4">
+              <div class="min-w-0">
+                <p class="font-medium text-amber-900 truncate">{{ job.title }}</p>
+                <p class="text-xs text-amber-600 mt-0.5">{{ job.location }} · posted {{ formatDate(job.createdAtUtc) }}</p>
+              </div>
+              <div class="flex items-center gap-2 flex-shrink-0">
+                <a [routerLink]="['/jobs', job.id]" (click)="removeDraft(job.id)"
+                  class="text-xs bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
+                  Publish →
+                </a>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- Active jobs -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div class="flex items-center justify-between mb-5">
-        <h2 class="font-bold text-gray-900">Recent Job Listings</h2>
+        <h2 class="font-bold text-gray-900">Published Jobs</h2>
         <a routerLink="/jobs/new" class="text-sm text-purple-600 hover:underline font-medium">+ Post new</a>
       </div>
 
@@ -65,7 +96,7 @@
         </div>
       } @else if (recentJobs.length === 0) {
         <div class="text-center py-10">
-          <p class="text-gray-500 mb-3">No jobs posted yet.</p>
+          <p class="text-gray-500 mb-3">No published jobs yet.</p>
           <a routerLink="/jobs/new" class="text-purple-600 font-medium hover:underline text-sm">Post your first job →</a>
         </div>
       } @else {

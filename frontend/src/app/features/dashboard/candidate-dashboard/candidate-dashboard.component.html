@@ -72,7 +72,7 @@
           @for (app of applications; track app.id) {
             <div class="py-4 flex items-center justify-between gap-4">
               <div class="min-w-0">
-                <p class="text-xs text-gray-400 font-mono truncate">Job: {{ app.jobId }}</p>
+                <p class="font-medium text-gray-900 truncate">{{ app.jobTitle || ('Job ' + app.jobId.slice(0,8) + '...') }}</p>
                 <p class="text-xs text-gray-400 mt-0.5">Applied {{ formatDate(app.submittedAtUtc) }}</p>
               </div>
               <div class="flex items-center gap-3 flex-shrink-0">
