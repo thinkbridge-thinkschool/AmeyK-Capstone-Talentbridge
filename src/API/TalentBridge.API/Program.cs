@@ -191,22 +191,6 @@ var app = builder.Build();
 
 // ── Startup DB migration (runs on first boot in Azure via Managed Identity) ───
 using (var scope = app.Services.CreateScope())
-// ── Security headers ──────────────────────────────────────────────────────────
-app.Use(async (context, next) =>
-{
-    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
-    context.Response.Headers["X-Frame-Options"] = "DENY";
-    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
-    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'";
-    context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
-    context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
-    context.Response.Headers.Remove("X-Powered-By");
-    await next();
-});
-
-// ── Pipeline ──────────────────────────────────────────────────────────────────
-if (app.Environment.IsDevelopment())
 {
     var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
     async Task MigrateAsync<T>() where T : DbContext
@@ -226,6 +210,20 @@ if (app.Environment.IsDevelopment())
     await MigrateAsync<JobsDbContext>();
     await MigrateAsync<ApplicationsDbContext>();
 }
+
+// ── Security headers ──────────────────────────────────────────────────────────
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'";
+    context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
+    context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
+    context.Response.Headers.Remove("X-Powered-By");
+    await next();
+});
 
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 app.UseDefaultFiles();
