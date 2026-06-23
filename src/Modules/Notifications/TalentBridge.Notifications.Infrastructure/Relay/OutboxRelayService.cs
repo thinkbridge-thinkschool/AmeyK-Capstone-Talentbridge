@@ -55,6 +55,9 @@ public class OutboxRelayService : BackgroundService
     private async Task ProcessPendingMessagesAsync(CancellationToken ct)
     {
         using var scope = _scopeFactory.CreateScope();
+        var outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
+
+        var pending = await outboxRepository.GetPendingAsync(ct);
         var _outboxRepository = scope.ServiceProvider.GetRequiredService<IOutboxRepository>();
         var pending = await _outboxRepository.GetPendingAsync(ct);
 
@@ -87,13 +90,14 @@ public class OutboxRelayService : BackgroundService
                 }
 
                 message.ProcessedOnUtc = DateTime.UtcNow;
-                await _outboxRepository.SaveAsync(message, ct);
+                await outboxRepository.SaveAsync(message, ct);
 
                 activity?.SetStatus(ActivityStatusCode.Ok);
                 _logger.LogInformation("[OutboxRelay] Relayed outbox message {Id} ({Type})", message.Id, message.Type);
             }
             catch (Exception ex) when (!SimulateCrash || ex.Message != "Simulated crash after publish")
             {
+                await outboxRepository.SaveAsync(message, ct);
                 activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
                 await _outboxRepository.SaveAsync(message, ct);
 

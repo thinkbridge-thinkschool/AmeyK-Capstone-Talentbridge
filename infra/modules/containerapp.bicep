@@ -152,3 +152,4 @@ output name string = containerApp.name
 output fqdn string = containerApp.properties.configuration.ingress.fqdn
 output principalId string = containerApp.identity.principalId
 output registryLoginServer string = containerRegistry.properties.loginServer
+output registryName string = containerRegistry.name

@@ -92,13 +92,15 @@
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <h2 class="font-bold text-gray-900 mb-5">Hiring Workflow</h2>
       <div class="flex flex-col sm:flex-row gap-4">
-        <div *ngFor="let step of workflowSteps" class="flex-1 text-center p-4 rounded-xl bg-gray-50">
-          <div class="w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm flex items-center justify-center mx-auto mb-2">
-            {{ step.icon }}
+        @for (step of workflowSteps; track step.icon) {
+          <div class="flex-1 text-center p-4 rounded-xl bg-gray-50">
+            <div class="w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm flex items-center justify-center mx-auto mb-2">
+              {{ step.icon }}
+            </div>
+            <p class="font-semibold text-gray-800 text-sm">{{ step.title }}</p>
+            <p class="text-gray-500 text-xs mt-1">{{ step.desc }}</p>
           </div>
-          <p class="font-semibold text-gray-800 text-sm">{{ step.title }}</p>
-          <p class="text-gray-500 text-xs mt-1">{{ step.desc }}</p>
-        </div>
+        }
       </div>
     </div>
   </div>

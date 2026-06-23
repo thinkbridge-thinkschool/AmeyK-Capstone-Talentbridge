@@ -3,17 +3,20 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
-using TalentBridge.Applications.Infrastructure.Persistence;
+using TalentBridge.Jobs.Infrastructure.Persistence;
 
 #nullable disable
 
-namespace TalentBridge.Applications.Infrastructure.Migrations
+namespace TalentBridge.Jobs.Infrastructure.Migrations
 {
-    [DbContext(typeof(ApplicationsDbContext))]
-    partial class ApplicationsDbContextModelSnapshot : ModelSnapshot
+    [DbContext(typeof(JobsDbContext))]
+    [Migration("20260623050052_UpdateSchema")]
+    partial class UpdateSchema
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,56 +25,69 @@ namespace TalentBridge.Applications.Infrastructure.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("TalentBridge.Applications.Domain.Aggregates.JobApplication", b =>
+            modelBuilder.Entity("TalentBridge.Jobs.Domain.Aggregates.Job", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("CandidateId")
-                        .HasColumnType("uniqueidentifier");
+                    b.Property<DateTime?>("ClosedAtUtc")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("CoverLetter")
-                        .IsRequired()
-                        .HasMaxLength(5000)
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid>("JobId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime>("LastUpdatedAtUtc")
+                    b.Property<DateTime>("CreatedAtUtc")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("ResumeUrl")
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(5000)
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ExpiresAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Location")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("ReviewNotes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("ReviewedByHRId")
+                    b.Property<Guid>("PostedByHRId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("PublishedAtUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<decimal>("SalaryMax")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal>("SalaryMin")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
-                    b.Property<DateTime>("SubmittedAtUtc")
-                        .HasColumnType("datetime2");
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("CandidateId");
+                    b.HasIndex("CompanyId");
 
-                    b.HasIndex("JobId");
+                    b.HasIndex("Status");
 
-                    b.ToTable("JobApplications");
+                    b.ToTable("Jobs");
                 });
 
             modelBuilder.Entity("TalentBridge.Shared.Outbox.OutboxMessage", b =>
@@ -96,7 +112,7 @@ namespace TalentBridge.Applications.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("ApplicationsOutboxMessages", (string)null);
+                    b.ToTable("JobsOutboxMessages", (string)null);
                 });
 #pragma warning restore 612, 618
         }

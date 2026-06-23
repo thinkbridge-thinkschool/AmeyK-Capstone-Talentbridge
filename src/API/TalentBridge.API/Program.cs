@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
+using Microsoft.EntityFrameworkCore;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.OpenApi.Models;
@@ -12,9 +13,12 @@ using TalentBridge.API.Telemetry;
 using TalentBridge.API.Resilience;
 using TalentBridge.Applications.Application;
 using TalentBridge.Applications.Infrastructure;
+using TalentBridge.Applications.Infrastructure.Persistence;
 using TalentBridge.Identity.Infrastructure;
+using TalentBridge.Identity.Infrastructure.Persistence;
 using TalentBridge.Jobs.Application;
 using TalentBridge.Jobs.Infrastructure;
+using TalentBridge.Jobs.Infrastructure.Persistence;
 using TalentBridge.Notifications.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -46,6 +50,11 @@ var storageUri = config["Storage:ServiceUri"]
     ?? "https://talentbridgestamey2.blob.core.windows.net/";
 builder.Services.AddSingleton(new BlobServiceClient(new Uri(storageUri), credential));
 
+var storageConnection = config["Storage:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(storageConnection) && storageConnection != "SET_IN_KEYVAULT")
+    builder.Services.AddSingleton(new BlobServiceClient(storageConnection));
+else
+    builder.Services.AddSingleton(new BlobServiceClient(new Uri("https://placeholder.blob.core.windows.net")));
 // ── OpenTelemetry → Azure App Insights ───────────────────────────────────────
 builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing
@@ -178,6 +187,8 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+// ── Startup DB migration (runs on first boot in Azure via Managed Identity) ───
+using (var scope = app.Services.CreateScope())
 // ── Security headers ──────────────────────────────────────────────────────────
 app.Use(async (context, next) =>
 {
@@ -195,13 +206,35 @@ app.Use(async (context, next) =>
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 if (app.Environment.IsDevelopment())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
+    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    async Task MigrateAsync<T>() where T : DbContext
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "TalentBridge API v1");
-        c.RoutePrefix = "swagger";
-    });
+        try
+        {
+            var db = scope.ServiceProvider.GetRequiredService<T>();
+            await db.Database.MigrateAsync();
+            logger.LogInformation("[Startup] {Context} migration succeeded", typeof(T).Name);
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "[Startup] {Context} migration failed — app will continue", typeof(T).Name);
+        }
+    }
+    await MigrateAsync<IdentityDbContext>();
+    await MigrateAsync<JobsDbContext>();
+    await MigrateAsync<ApplicationsDbContext>();
 }
+
+// ── Pipeline ──────────────────────────────────────────────────────────────────
+app.UseDefaultFiles();
+app.UseStaticFiles();
+
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "TalentBridge API v1");
+    c.RoutePrefix = "swagger";
+});
 
 app.UseHttpsRedirection();
 app.UseCors("TalentBridgeCors");
@@ -210,5 +243,6 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.MapResilienceEndpoints();
+app.MapFallbackToFile("index.html");
 
 app.Run();

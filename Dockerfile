@@ -2,10 +2,9 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
-COPY TalentBridge.slnx ./
 COPY src/ ./src/
 
-RUN dotnet restore TalentBridge.slnx
+RUN dotnet restore src/API/TalentBridge.API/TalentBridge.API.csproj
 
 RUN dotnet publish src/API/TalentBridge.API/TalentBridge.API.csproj \
     --configuration Release \

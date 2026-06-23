@@ -21,10 +21,14 @@ param softDeleteRetentionDays int = 7
 param storageSku string = 'Standard_LRS'
 param staticWebAppSku string = 'Free'
 
-// NOTE: SQL and Container App excluded — student subscription regional/quota limits.
-// Modules exist in infra/modules/ and are production-ready for a paid subscription.
+@description('SQL Server administrator login')
+param sqlAdminLogin string = 'tbridgeadmin'
 
-// ── Log Analytics Workspace (inline) ─────────────────────────────────────────
+@description('SQL Server administrator password — injected at deploy time via --parameters')
+@secure()
+param sqlAdminPassword string
+
+// ── Log Analytics Workspace ───────────────────────────────────────────────────
 resource logAnalytics 'Microsoft.OperationalInsights/workspaces@2023-09-01' = {
   name: '${appName}-law-${suffix}'
   location: location
@@ -107,6 +111,33 @@ module staticWebApp 'modules/staticwebapp.bicep' = {
   }
 }
 
+// ── Azure SQL Database (Basic 5 DTU) ──────────────────────────────────────────
+module sql 'modules/sql.bicep' = {
+  name: 'sql-deploy'
+  params: {
+    serverName: '${appName}-sql-${suffix}'
+    location: location
+    adminLogin: sqlAdminLogin
+    adminPassword: sqlAdminPassword
+    edition: 'Basic'
+    capacity: 5
+    maxSizeGB: 2
+  }
+}
+
+// ── Container App (API) + ACR ─────────────────────────────────────────────────
+module api 'modules/containerapp.bicep' = {
+  name: 'containerapp-deploy'
+  params: {
+    name: '${appName}-api-${suffix}'
+    location: location
+    logAnalyticsCustomerId: logAnalytics.properties.customerId
+    logAnalyticsSharedKey: logAnalytics.listKeys().primarySharedKey
+    minReplicas: 0
+    maxReplicas: 2
+  }
+}
+
 // ── Outputs ───────────────────────────────────────────────────────────────────
 output keyVaultName string = keyVault.outputs.name
 output keyVaultUri string = keyVault.outputs.uri
@@ -115,5 +146,9 @@ output appInsightsName string = appInsights.outputs.name
 output serviceBusNamespace string = serviceBus.outputs.name
 output staticWebAppUrl string = staticWebApp.outputs.url
 output logAnalyticsName string = logAnalytics.name
-output vnetName string = vnet.outputs.vnetName
-output privateEndpointsSubnetId string = vnet.outputs.privateEndpointsSubnetId
+output sqlServerFqdn string = sql.outputs.fqdn
+output sqlDatabaseName string = sql.outputs.databaseName
+output containerAppName string = api.outputs.name
+output containerAppFqdn string = api.outputs.fqdn
+output acrLoginServer string = api.outputs.registryLoginServer
+output acrName string = api.outputs.registryName
