@@ -227,6 +227,10 @@ Hot path: `GET /api/jobs/search` (most-called public endpoint, backed by HybridC
 
 ## Tests — 32/32 Passing
 
+### CI Run (Green)
+
+**Latest CI:** [actions/runs/28173350638](https://github.com/thinkbridge-thinkschool/AmeyK-Capstone-Talentbridge/actions/runs/28173350638) — ✓ Build & Test (.NET 10) passed in 1m 8s
+
 ![Test Results](docs/ScreenShots/test-results-32-pass.png)
 
 ```
@@ -240,7 +244,20 @@ Integration.Tests (HTTP end-to-end)        9     ✓ PASS
 Total                                     32     0 failed
 ```
 
-### Integration Test Coverage
+### Coverage by Layer
+
+Coverage measured with Coverlet (XPlat Code Coverage / Cobertura format), collected on every CI run.
+
+| Layer | Test Suite | Line Coverage | Branch Coverage |
+|---|---|---|---|
+| Identity Domain | `Identity.Domain.Tests` | 65.4% | 75.0% |
+| Jobs Domain | `Jobs.Domain.Tests` | 79.4% | 37.5% |
+| Applications Domain | `Applications.Domain.Tests` | 74.5% | 55.0% |
+| Full API (all modules) | `Integration.Tests` | 26.6% | 21.6% |
+
+> Domain layers have the highest coverage because unit tests directly exercise every aggregate method and state transition. Integration test coverage is lower across the full codebase because it exercises one happy path through all 5 modules — uncovered lines are error branches and admin-only flows not included in the E2E test.
+
+### Integration Test Scenarios
 The integration tests spin up the full ASP.NET Core pipeline (no mocks) and exercise real HTTP flows:
 
 - Register + duplicate email guard
