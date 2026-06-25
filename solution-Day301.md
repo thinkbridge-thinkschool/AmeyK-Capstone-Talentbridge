@@ -207,6 +207,8 @@ TalentBridge is built as a **Modular Monolith** — five independent bounded con
 
 ## Tests — 32/32 Passing
 
+![Test Results](docs/ScreenShots/test-results-32-pass.png)
+
 ```
 Suite                                    Tests   Result
 ────────────────────────────────────────────────────────
