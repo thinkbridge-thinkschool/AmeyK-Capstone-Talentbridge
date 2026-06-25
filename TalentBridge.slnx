@@ -34,6 +34,7 @@
   <Folder Name="/tests/">
     <Project Path="tests/TalentBridge.Applications.Domain.Tests/TalentBridge.Applications.Domain.Tests.csproj" />
     <Project Path="tests/TalentBridge.Identity.Domain.Tests/TalentBridge.Identity.Domain.Tests.csproj" />
+    <Project Path="tests/TalentBridge.Integration.Tests/TalentBridge.Integration.Tests.csproj" />
     <Project Path="tests/TalentBridge.Jobs.Domain.Tests/TalentBridge.Jobs.Domain.Tests.csproj" />
   </Folder>
 </Solution>
