@@ -26,5 +26,18 @@ jobs:
       - name: Build (Release)
         run: dotnet build TalentBridge.slnx --no-restore --configuration Release
 
-      - name: Run tests
-        run: dotnet test TalentBridge.slnx --no-build --configuration Release --verbosity normal --logger "console;verbosity=detailed"
+      - name: Test with coverage
+        run: |
+          dotnet test TalentBridge.slnx \
+            --no-build \
+            --configuration Release \
+            --verbosity normal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage \
+            -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: ./coverage

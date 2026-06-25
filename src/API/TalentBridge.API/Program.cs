@@ -281,3 +281,5 @@ app.MapResilienceEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+public partial class Program { }
