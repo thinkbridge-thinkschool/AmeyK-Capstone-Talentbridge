@@ -12,7 +12,7 @@ export const roleGuard: CanActivateFn = (route, state) => {
     });
   }
 
-  const allowedRoles: number[] = route.data?.['roles'] ?? [];
+  const allowedRoles: string[] = route.data?.['roles'] ?? [];
   const userRole = tokenService.getRole();
 
   if (allowedRoles.length === 0 || (userRole !== null && allowedRoles.includes(userRole))) {

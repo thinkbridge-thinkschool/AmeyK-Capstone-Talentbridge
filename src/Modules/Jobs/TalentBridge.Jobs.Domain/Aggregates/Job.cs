@@ -68,4 +68,21 @@ public class Job : AggregateRoot
     }
 
     public bool IsAcceptingApplications() => Status == JobStatus.Active && ExpiresAtUtc > DateTime.UtcNow;
+
+    public Result Update(string title, string description, string location, decimal salaryMin, decimal salaryMax)
+    {
+        if (string.IsNullOrWhiteSpace(title)) return Result.Failure("Title cannot be empty.");
+        if (title.Length > 200) return Result.Failure("Title cannot exceed 200 characters.");
+        if (string.IsNullOrWhiteSpace(description)) return Result.Failure("Description cannot be empty.");
+        if (salaryMin <= 0) return Result.Failure("SalaryMin must be greater than 0.");
+        if (salaryMax < salaryMin) return Result.Failure("SalaryMax must be >= SalaryMin.");
+        if (string.IsNullOrWhiteSpace(location)) return Result.Failure("Location cannot be empty.");
+
+        Title = title;
+        Description = description;
+        Location = location;
+        SalaryMin = salaryMin;
+        SalaryMax = salaryMax;
+        return Result.Success();
+    }
 }

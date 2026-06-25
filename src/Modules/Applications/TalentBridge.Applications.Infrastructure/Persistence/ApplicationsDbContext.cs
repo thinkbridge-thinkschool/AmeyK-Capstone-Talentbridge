@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using TalentBridge.Applications.Application.Interfaces;
 using TalentBridge.Applications.Domain.Aggregates;
+using TalentBridge.Applications.Domain.Entities;
 using TalentBridge.Shared.Outbox;
 
 namespace TalentBridge.Applications.Infrastructure.Persistence;
@@ -11,6 +12,7 @@ public class ApplicationsDbContext : DbContext, IApplicationsDbContext
     public ApplicationsDbContext(DbContextOptions<ApplicationsDbContext> options) : base(options) { }
 
     public DbSet<JobApplication> JobApplications => Set<JobApplication>();
+    public DbSet<ApplicationStatusHistory> StatusHistory => Set<ApplicationStatusHistory>();
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     DatabaseFacade IApplicationsDbContext.Database => Database;
@@ -28,6 +30,16 @@ public class ApplicationsDbContext : DbContext, IApplicationsDbContext
             e.HasIndex(a => a.JobId);
             e.HasIndex(a => a.CandidateId);
             e.Ignore(a => a.DomainEvents);
+        });
+
+        modelBuilder.Entity<ApplicationStatusHistory>(e =>
+        {
+            e.HasKey(h => h.Id);
+            e.Property(h => h.FromStatus).IsRequired().HasMaxLength(50);
+            e.Property(h => h.ToStatus).IsRequired().HasMaxLength(50);
+            e.Property(h => h.Notes).HasMaxLength(1000);
+            e.HasIndex(h => h.ApplicationId);
+            e.ToTable("ApplicationStatusHistory");
         });
 
         modelBuilder.Entity<OutboxMessage>(e =>

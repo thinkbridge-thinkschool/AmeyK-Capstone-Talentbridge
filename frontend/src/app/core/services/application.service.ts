@@ -29,8 +29,15 @@ export class ApplicationService {
     return this.http.get<JobApplication>(`${this.apiUrl}/api/applications/${id}`);
   }
 
-  getMyApplications(candidateId: string): Observable<ApplicationSummary[]> {
-    return this.http.get<ApplicationSummary[]>(`${this.apiUrl}/api/applications?candidateId=${candidateId}`);
+  getMyApplications(): Observable<ApplicationSummary[]> {
+    return this.http.get<ApplicationSummary[]>(`${this.apiUrl}/api/applications/my`);
+  }
+
+  getExistingApplication(jobId: string): ApplicationSummary | null {
+    try {
+      const apps: ApplicationSummary[] = JSON.parse(localStorage.getItem('tb_my_applications') ?? '[]');
+      return apps.find(a => a.jobId === jobId) ?? null;
+    } catch { return null; }
   }
 
   getJobApplications(jobId: string): Observable<ApplicationSummary[]> {
@@ -39,5 +46,9 @@ export class ApplicationService {
 
   updateStatus(id: string, newStatus: string, rejectionReason?: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/api/applications/${id}/status`, { newStatus, rejectionReason });
+  }
+
+  withdraw(id: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/api/applications/${id}/withdraw`, {});
   }
 }

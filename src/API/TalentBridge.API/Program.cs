@@ -14,12 +14,17 @@ using TalentBridge.API.Resilience;
 using TalentBridge.Applications.Application;
 using TalentBridge.Applications.Infrastructure;
 using TalentBridge.Applications.Infrastructure.Persistence;
+using TalentBridge.Companies.Application.Commands.CreateCompany;
+using TalentBridge.Companies.Infrastructure;
+using TalentBridge.Companies.Infrastructure.Persistence;
+using TalentBridge.Notifications.Application.Queries.GetNotifications;
 using TalentBridge.Identity.Infrastructure;
 using TalentBridge.Identity.Infrastructure.Persistence;
 using TalentBridge.Jobs.Application;
 using TalentBridge.Jobs.Infrastructure;
 using TalentBridge.Jobs.Infrastructure.Persistence;
 using TalentBridge.Notifications.Infrastructure;
+using TalentBridge.Notifications.Infrastructure.Persistence;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -39,6 +44,7 @@ builder.Services.AddJobsInfrastructure(config);
 builder.Services.AddJobsApplication();
 builder.Services.AddApplicationsInfrastructure(config);
 builder.Services.AddApplicationsApplication();
+builder.Services.AddCompaniesModule(config);
 builder.Services.AddNotificationsModule(config);
 
 // ── Azure clients — Managed Identity (no connection string keys) ──────────────
@@ -56,7 +62,10 @@ if (!string.IsNullOrWhiteSpace(storageConnection) && storageConnection != "SET_I
 else
     builder.Services.AddSingleton(new BlobServiceClient(new Uri("https://placeholder.blob.core.windows.net")));
 // ── OpenTelemetry → Azure App Insights ───────────────────────────────────────
-builder.Services.AddOpenTelemetry()
+var appInsightsCs = config["APPLICATIONINSIGHTS_CONNECTION_STRING"]
+    ?? config["AzureMonitor:ConnectionString"];
+
+var otelBuilder = builder.Services.AddOpenTelemetry()
     .WithTracing(tracing => tracing
         .SetResourceBuilder(
             ResourceBuilder.CreateDefault()
@@ -72,8 +81,10 @@ builder.Services.AddOpenTelemetry()
             opts.RecordException = true;
         })
         .AddHttpClientInstrumentation()
-        .AddSource(TalentBridgeDiagnostics.SourceName))
-    .UseAzureMonitor();
+        .AddSource(TalentBridgeDiagnostics.SourceName));
+
+if (!string.IsNullOrWhiteSpace(appInsightsCs))
+    otelBuilder.UseAzureMonitor();
 
 // ── Caching ───────────────────────────────────────────────────────────────────
 builder.Services.AddMemoryCache();
@@ -85,7 +96,9 @@ builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssemblies(
         typeof(TalentBridge.Identity.Application.Commands.Login.LoginCommand).Assembly,
         typeof(TalentBridge.Jobs.Application.Commands.PostJob.PostJobCommand).Assembly,
-        typeof(TalentBridge.Applications.Application.Commands.Apply.ApplyCommand).Assembly);
+        typeof(TalentBridge.Applications.Application.Commands.Apply.ApplyCommand).Assembly,
+        typeof(TalentBridge.Companies.Application.Commands.CreateCompany.CreateCompanyCommand).Assembly,
+        typeof(TalentBridge.Notifications.Application.Queries.GetNotifications.GetNotificationsQuery).Assembly);
 });
 
 // ── HTTP Client with Polly resilience ─────────────────────────────────────────
@@ -209,7 +222,11 @@ using (var scope = app.Services.CreateScope())
     await MigrateAsync<IdentityDbContext>();
     await MigrateAsync<JobsDbContext>();
     await MigrateAsync<ApplicationsDbContext>();
+    await MigrateAsync<CompanyDbContext>();
+    await MigrateAsync<NotificationsDbContext>();
 }
+
+await DataSeeder.SeedAsync(app.Services, app.Logger);
 
 // ── Security headers ──────────────────────────────────────────────────────────
 app.Use(async (context, next) =>
@@ -228,6 +245,24 @@ app.Use(async (context, next) =>
 // ── Pipeline ──────────────────────────────────────────────────────────────────
 app.UseDefaultFiles();
 app.UseStaticFiles();
+
+// Return JSON { message } for unhandled exceptions instead of HTML developer page
+app.UseExceptionHandler(errApp => errApp.Run(async ctx =>
+{
+    ctx.Response.ContentType = "application/json";
+    var feature = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>();
+    var ex = feature?.Error;
+    var (status, msg) = ex switch
+    {
+        InvalidOperationException ioe => (400, ioe.Message),
+        ArgumentException ae          => (400, ae.Message),
+        UnauthorizedAccessException   => (401, "Unauthorized."),
+        KeyNotFoundException knfe     => (404, knfe.Message),
+        _                             => (500, "An unexpected error occurred.")
+    };
+    ctx.Response.StatusCode = status;
+    await ctx.Response.WriteAsJsonAsync(new { message = msg });
+}));
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>

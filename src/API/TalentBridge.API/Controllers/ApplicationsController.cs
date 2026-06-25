@@ -3,8 +3,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TalentBridge.Applications.Application.Commands.Apply;
 using TalentBridge.Applications.Application.Commands.UpdateStatus;
+using TalentBridge.Applications.Application.Commands.Withdraw;
 using TalentBridge.Applications.Application.Queries.GetApplication;
+using TalentBridge.Applications.Application.Queries.GetApplicationHistory;
 using TalentBridge.Applications.Application.Queries.GetApplications;
+using TalentBridge.Shared.Interfaces;
 
 namespace TalentBridge.API.Controllers;
 
@@ -13,8 +16,21 @@ namespace TalentBridge.API.Controllers;
 public class ApplicationsController : ControllerBase
 {
     private readonly IMediator _mediator;
+    private readonly ICurrentUserService _currentUser;
 
-    public ApplicationsController(IMediator mediator) => _mediator = mediator;
+    public ApplicationsController(IMediator mediator, ICurrentUserService currentUser)
+    {
+        _mediator = mediator;
+        _currentUser = currentUser;
+    }
+
+    [HttpGet("my")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> GetMyApplications(CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetApplicationsQuery(_currentUser.UserId, null), ct);
+        return Ok(result);
+    }
 
     [HttpGet]
     [Authorize]
@@ -49,6 +65,22 @@ public class ApplicationsController : ControllerBase
     {
         await _mediator.Send(new UpdateApplicationStatusCommand(id, request.NewStatus, request.RejectionReason), ct);
         return NoContent();
+    }
+
+    [HttpPatch("{id:guid}/withdraw")]
+    [Authorize(Roles = "Candidate")]
+    public async Task<IActionResult> Withdraw(Guid id, CancellationToken ct)
+    {
+        await _mediator.Send(new WithdrawApplicationCommand(id, _currentUser.UserId), ct);
+        return NoContent();
+    }
+
+    [HttpGet("{id:guid}/history")]
+    [Authorize]
+    public async Task<IActionResult> GetHistory(Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetApplicationHistoryQuery(id), ct);
+        return Ok(result);
     }
 }
 

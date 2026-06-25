@@ -1,0 +1,144 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4">
+  <div class="max-w-5xl mx-auto">
+
+    <!-- Breadcrumb -->
+    <nav class="mb-6 text-sm text-gray-500">
+      <a routerLink="/dashboard/hr" class="hover:text-purple-600">Dashboard</a>
+      <span class="mx-2">/</span>
+      @if (job) {
+        <a [routerLink]="['/jobs', jobId]" class="hover:text-purple-600">{{ job.title }}</a>
+      } @else {
+        <span>Job</span>
+      }
+      <span class="mx-2">/</span>
+      <span class="text-gray-800 font-medium">Applicants</span>
+    </nav>
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-purple-700 to-purple-900 rounded-2xl p-7 mb-8 text-white">
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <p class="text-purple-300 text-sm mb-1">Applications for</p>
+          <h1 class="text-2xl font-bold">{{ job?.title ?? 'Loading...' }}</h1>
+          @if (job) {
+            <p class="text-purple-300 text-sm mt-1">{{ job.location }}</p>
+          }
+        </div>
+        <div class="flex gap-4 text-center">
+          <div class="bg-white/10 rounded-xl px-5 py-3">
+            <p class="text-2xl font-bold">{{ applications.length }}</p>
+            <p class="text-purple-200 text-xs">Total</p>
+          </div>
+          @if (counts['Submitted']) {
+            <div class="bg-blue-500/30 rounded-xl px-5 py-3">
+              <p class="text-2xl font-bold">{{ counts['Submitted'] }}</p>
+              <p class="text-purple-200 text-xs">New</p>
+            </div>
+          }
+          @if (counts['Shortlisted']) {
+            <div class="bg-purple-500/30 rounded-xl px-5 py-3">
+              <p class="text-2xl font-bold">{{ counts['Shortlisted'] }}</p>
+              <p class="text-purple-200 text-xs">Shortlisted</p>
+            </div>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading -->
+    @if (loading) {
+      <div class="space-y-4">
+        @for (i of [1,2,3]; track i) {
+          <div class="bg-white rounded-2xl p-6 animate-pulse">
+            <div class="flex justify-between">
+              <div class="space-y-2 flex-1">
+                <div class="h-4 bg-gray-200 rounded w-1/3"></div>
+                <div class="h-3 bg-gray-100 rounded w-1/4"></div>
+              </div>
+              <div class="h-8 w-24 bg-gray-200 rounded-lg"></div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Empty -->
+    @if (!loading && applications.length === 0) {
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-16 text-center">
+        <svg class="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+        </svg>
+        <p class="text-gray-500 font-medium text-lg">No applications yet</p>
+        <p class="text-gray-400 text-sm mt-1">Applications will appear here once candidates start applying.</p>
+      </div>
+    }
+
+    <!-- Applications list -->
+    @if (!loading && applications.length > 0) {
+      <div class="space-y-4">
+        @for (app of applications; track app.id) {
+          <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+
+              <!-- Left: candidate info -->
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-3 mb-2">
+                  <div class="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center flex-shrink-0">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                    </svg>
+                  </div>
+                  <div>
+                    <p class="font-semibold text-gray-900 text-sm">Candidate</p>
+                    <p class="text-xs text-gray-400 font-mono">{{ app.candidateId }}</p>
+                  </div>
+                </div>
+                <div class="flex flex-wrap gap-3 text-xs text-gray-500 ml-13">
+                  <span>Applied {{ formatDate(app.submittedAtUtc) }}</span>
+                  @if (app.resumeUrl) {
+                    <a [href]="app.resumeUrl" target="_blank" rel="noopener"
+                      class="text-blue-600 hover:underline flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
+                      </svg>
+                      Resume
+                    </a>
+                  }
+                </div>
+                <!-- Cover letter preview -->
+                <p class="mt-3 text-sm text-gray-600 line-clamp-2 ml-13">{{ app.coverLetter }}</p>
+              </div>
+
+              <!-- Right: status + actions -->
+              <div class="flex flex-col items-end gap-3 flex-shrink-0">
+                <app-status-badge [status]="app.status"></app-status-badge>
+
+                <div class="flex flex-wrap gap-2 justify-end">
+                  @for (action of actionsFor(app.status); track action.next) {
+                    <button
+                      (click)="updateStatus(app.id, action.next)"
+                      [disabled]="actionLoadingId === app.id"
+                      [class]="'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ' + action.cls">
+                      @if (actionLoadingId === app.id) {
+                        <span class="inline-block w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin mr-1 align-middle"></span>
+                      }
+                      {{ action.label }}
+                    </button>
+                  }
+                  <a [routerLink]="['/applications', app.id]"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+                    View Detail →
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

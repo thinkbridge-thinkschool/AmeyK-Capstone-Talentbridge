@@ -5,4 +5,4 @@ namespace TalentBridge.Identity.Application.Commands.Login;
 
 public record LoginCommand(string Email, string Password) : IRequest<Result<LoginResult>>;
 
-public record LoginResult(string Token, DateTime ExpiresAt, string UserRole);
+public record LoginResult(string Token, string RefreshToken, DateTime ExpiresAt, string UserRole);

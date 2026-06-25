@@ -1,7 +1,13 @@
 {
   "/api": {
-    "target": "https://talentbridge-api-amey.azurewebsites.net",
-    "secure": true,
+    "target": "http://localhost:5237",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "info"
+  },
+  "/uploads": {
+    "target": "http://localhost:5237",
+    "secure": false,
     "changeOrigin": true,
     "logLevel": "info"
   }

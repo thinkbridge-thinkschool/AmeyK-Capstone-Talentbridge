@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './core/guards/auth.guard';
+import { roleGuard } from './core/guards/role.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'jobs', pathMatch: 'full' },
@@ -35,6 +36,14 @@ export const routes: Routes = [
       import('./features/jobs/job-detail/job-detail.component').then(m => m.JobDetailComponent)
   },
   {
+    path: 'jobs/:id/applications',
+    loadComponent: () =>
+      import('./features/applications/job-applications/job-applications.component').then(
+        m => m.JobApplicationsComponent
+      ),
+    canActivate: [authGuard]
+  },
+  {
     path: 'jobs/:id/apply',
     loadComponent: () =>
       import('./features/applications/apply/apply.component').then(m => m.ApplyComponent),
@@ -65,9 +74,32 @@ export const routes: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'dashboard/admin',
+    loadComponent: () =>
+      import('./features/dashboard/admin-dashboard/admin-dashboard.component').then(
+        m => m.AdminDashboardComponent
+      ),
+    canActivate: [roleGuard],
+    data: { roles: ['Admin'] }
+  },
+  {
+    path: 'notifications',
+    loadComponent: () =>
+      import('./features/notifications/notifications.component').then(
+        m => m.NotificationsComponent
+      ),
+    canActivate: [authGuard]
+  },
+  {
     path: 'profile',
     loadComponent: () =>
       import('./features/profile/profile.component').then(m => m.ProfileComponent),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'companies',
+    loadComponent: () =>
+      import('./features/companies/company-list/company-list.component').then(m => m.CompanyListComponent),
     canActivate: [authGuard]
   },
   { path: '**', redirectTo: 'jobs' }

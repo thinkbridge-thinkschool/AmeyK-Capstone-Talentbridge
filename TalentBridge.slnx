@@ -10,7 +10,6 @@
     <Project Path="src/Modules/Applications/TalentBridge.Applications.Infrastructure/TalentBridge.Applications.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/src/Modules/Companies/">
-    <Project Path="src/Modules/Companies/TalentBridge.Companies.Application/TalentBridge.Companies.Application.csproj" />
     <Project Path="src/Modules/Companies/TalentBridge.Companies.Domain/TalentBridge.Companies.Domain.csproj" />
     <Project Path="src/Modules/Companies/TalentBridge.Companies.Infrastructure/TalentBridge.Companies.Infrastructure.csproj" />
   </Folder>

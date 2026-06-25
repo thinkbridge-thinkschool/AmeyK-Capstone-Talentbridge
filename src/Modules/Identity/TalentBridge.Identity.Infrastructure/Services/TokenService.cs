@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -13,6 +14,9 @@ public class TokenService : ITokenService
     private readonly IConfiguration _configuration;
 
     public TokenService(IConfiguration configuration) => _configuration = configuration;
+
+    public string GenerateRefreshToken() =>
+        Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
     public string GenerateToken(User user)
     {

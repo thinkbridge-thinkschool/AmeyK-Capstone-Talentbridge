@@ -33,47 +33,28 @@
       </div>
     }
 
-    <!-- Success -->
-    @if (successMessage) {
-      <div class="mb-5 p-4 bg-green-50 border border-green-200 rounded-xl text-green-700 text-sm flex items-center gap-2">
-        <svg class="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-        </svg>
-        {{ successMessage }}
-      </div>
-    }
-
-    <!-- Error -->
-    @if (errorMessage) {
-      <div class="mb-5 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
-        {{ errorMessage }}
-      </div>
-    }
-
     <!-- Form -->
     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
       <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate class="space-y-6">
 
-        <!-- Resume URL -->
+        <!-- Resume -->
         <div>
-          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Resume URL *</label>
+          <label class="block text-sm font-semibold text-gray-700 mb-1.5">Resume *</label>
+          <app-file-upload (uploaded)="onResumeUploaded($event)"></app-file-upload>
+          <p class="my-2 text-xs text-center text-gray-400">— or paste a link —</p>
           <input
             formControlName="resumeUrl"
             type="url"
             placeholder="https://drive.google.com/your-resume.pdf"
             [class]="'w-full px-4 py-3 rounded-xl border text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors ' +
-              (f['resumeUrl'].invalid && f['resumeUrl'].touched ? 'border-red-400 bg-red-50' : 'border-gray-300')"
+              ((showResumeError || (f['resumeUrl'].invalid && f['resumeUrl'].touched)) ? 'border-red-400 bg-red-50' : 'border-gray-300')"
           />
-          <p class="mt-1 text-xs text-gray-400">Link to your resume (Google Drive, Dropbox, LinkedIn, etc.)</p>
-          @if (f['resumeUrl'].invalid && f['resumeUrl'].touched) {
-            <div class="mt-1.5 text-xs text-red-600">
-              @if (f['resumeUrl'].errors?.['required']) {
-                <span>Resume URL is required.</span>
-              }
-              @if (f['resumeUrl'].errors?.['pattern']) {
-                <span>Please provide a valid URL starting with http:// or https://</span>
-              }
-            </div>
+          <p class="mt-1 text-xs text-gray-400">Upload directly or paste a Google Drive / Dropbox link.</p>
+          @if (showResumeError) {
+            <p class="mt-1.5 text-xs text-red-600">Resume is required. Upload a file or paste a URL.</p>
+          }
+          @if (!showResumeError && f['resumeUrl'].invalid && f['resumeUrl'].touched && f['resumeUrl'].errors?.['pattern']) {
+            <p class="mt-1.5 text-xs text-red-600">Please provide a valid URL starting with https://</p>
           }
         </div>
 

@@ -53,10 +53,14 @@ export class JobListComponent implements OnInit {
     return this.authService.isLoggedIn();
   }
 
+  showFilters = false;
+
   ngOnInit(): void {
     this.searchForm = this.fb.group({
       keyword: [''],
-      location: ['']
+      location: [''],
+      salaryMin: [null],
+      salaryMax: [null]
     });
 
     this.loadJobs();
@@ -69,12 +73,22 @@ export class JobListComponent implements OnInit {
       });
   }
 
+  get hasActiveFilters(): boolean {
+    const { salaryMin, salaryMax } = this.searchForm.value;
+    return salaryMin != null || salaryMax != null;
+  }
+
+  clearFilters(): void {
+    this.searchForm.patchValue({ salaryMin: null, salaryMax: null });
+  }
+
   loadJobs(): void {
     this.loading = true;
     this.errorMessage = '';
-    const { keyword, location } = this.searchForm.value;
+    const { keyword, location, salaryMin, salaryMax } = this.searchForm.value;
 
-    this.jobService.searchJobs(keyword, location, this.currentPage, this.pageSize).subscribe({
+    this.jobService.searchJobs(keyword, location, this.currentPage, this.pageSize,
+      salaryMin ?? undefined, salaryMax ?? undefined).subscribe({
       next: (result) => {
         this.jobs = result.items ?? [];
         this.totalCount = result.totalCount ?? 0;

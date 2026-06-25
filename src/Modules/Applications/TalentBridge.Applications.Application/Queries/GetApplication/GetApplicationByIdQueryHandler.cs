@@ -1,12 +1,12 @@
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using TalentBridge.Applications.Application.DTOs;
 using TalentBridge.Applications.Application.Interfaces;
-using TalentBridge.Applications.Domain.Aggregates;
 
 namespace TalentBridge.Applications.Application.Queries.GetApplication;
 
-public class GetApplicationByIdQueryHandler : IRequestHandler<GetApplicationByIdQuery, JobApplication?>
+public class GetApplicationByIdQueryHandler : IRequestHandler<GetApplicationByIdQuery, ApplicationDetailDto?>
 {
     private readonly IApplicationsDbContext _dbContext;
     private readonly ILogger<GetApplicationByIdQueryHandler> _logger;
@@ -17,11 +17,23 @@ public class GetApplicationByIdQueryHandler : IRequestHandler<GetApplicationById
         _logger = logger;
     }
 
-    public async Task<JobApplication?> Handle(GetApplicationByIdQuery request, CancellationToken cancellationToken)
+    public async Task<ApplicationDetailDto?> Handle(GetApplicationByIdQuery request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("[Applications] Fetching application {Id}", request.ApplicationId);
+
         return await _dbContext.JobApplications
             .AsNoTracking()
-            .FirstOrDefaultAsync(a => a.Id == request.ApplicationId, cancellationToken);
+            .Where(a => a.Id == request.ApplicationId)
+            .Select(a => new ApplicationDetailDto(
+                a.Id,
+                a.CandidateId,
+                a.JobId,
+                a.Status.ToString(),
+                a.CoverLetter,
+                a.ResumeUrl,
+                a.SubmittedAtUtc,
+                a.LastUpdatedAtUtc,
+                a.ReviewNotes))
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

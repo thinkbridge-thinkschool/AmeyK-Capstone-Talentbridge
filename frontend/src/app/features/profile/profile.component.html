@@ -1,16 +1,6 @@
 <div class="min-h-screen bg-gray-50 py-8 px-4">
   <div class="max-w-3xl mx-auto">
 
-    <!-- Success banner -->
-    @if (saved) {
-      <div class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl flex items-center gap-2">
-        <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-        </svg>
-        Profile saved successfully!
-      </div>
-    }
-
     <!-- Profile card header -->
     <div class="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 mb-6 text-white">
       <div class="flex items-center gap-5">
@@ -178,7 +168,9 @@
 
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Resume URL</label>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Resume</label>
+            <app-file-upload (uploaded)="onResumeUploaded($event)"></app-file-upload>
+            <p class="my-1.5 text-xs text-center text-gray-400">— or paste a URL —</p>
             <input formControlName="resumeUrl" type="url" placeholder="https://drive.google.com/..."
               class="w-full border border-gray-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"/>
           </div>
@@ -195,9 +187,15 @@
         </div>
 
         <div class="flex gap-3 pt-2">
-          <button type="submit"
-            class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2.5 rounded-xl transition-colors text-sm">
-            Save Profile
+          <button type="submit" [disabled]="saving"
+            class="flex-1 bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium py-2.5 rounded-xl transition-colors text-sm flex items-center justify-center gap-2">
+            @if (saving) {
+              <svg class="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+              </svg>
+            }
+            {{ saving ? 'Saving...' : 'Save Profile' }}
           </button>
           <button type="button" (click)="cancel()"
             class="flex-1 bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 font-medium py-2.5 rounded-xl transition-colors text-sm">

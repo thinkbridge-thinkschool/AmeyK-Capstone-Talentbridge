@@ -20,8 +20,8 @@ public class CloseJobCommandHandler : IRequestHandler<CloseJobCommand, Unit>
         var job = await _repository.GetByIdAsync(request.JobId, cancellationToken)
             ?? throw new KeyNotFoundException($"Job {request.JobId} not found.");
 
-        if (job.CompanyId != request.RequestingCompanyId)
-            throw new UnauthorizedAccessException("You do not own this job posting.");
+        if (job.PostedByHRId != request.RequestingHRId)
+            throw new UnauthorizedAccessException("You can only close your own job postings.");
 
         var result = job.Close();
         if (result.IsFailure)
@@ -29,7 +29,7 @@ public class CloseJobCommandHandler : IRequestHandler<CloseJobCommand, Unit>
 
         await _repository.SaveChangesAsync(cancellationToken);
 
-        _logger.LogInformation("[Jobs] Job {JobId} closed by company {CompanyId}", job.Id, request.RequestingCompanyId);
+        _logger.LogInformation("[Jobs] Job {JobId} closed by HR {HRId}", job.Id, request.RequestingHRId);
 
         return Unit.Value;
     }

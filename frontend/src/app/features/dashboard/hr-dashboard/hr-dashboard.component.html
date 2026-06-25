@@ -50,41 +50,10 @@
       </a>
     </div>
 
-    <!-- Draft jobs pending publish -->
-    @if (draftJobs.length > 0) {
-      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-6 mb-5">
-        <div class="flex items-center justify-between mb-4">
-          <h2 class="font-bold text-amber-900 flex items-center gap-2">
-            <svg class="w-5 h-5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            Draft Jobs — Needs Publishing
-          </h2>
-          <span class="text-xs text-amber-700 font-medium bg-amber-100 px-2 py-1 rounded-full">{{ draftJobs.length }} pending</span>
-        </div>
-        <div class="divide-y divide-amber-100">
-          @for (job of draftJobs; track job.id) {
-            <div class="py-3 flex items-center justify-between gap-4">
-              <div class="min-w-0">
-                <p class="font-medium text-amber-900 truncate">{{ job.title }}</p>
-                <p class="text-xs text-amber-600 mt-0.5">{{ job.location }} · posted {{ formatDate(job.createdAtUtc) }}</p>
-              </div>
-              <div class="flex items-center gap-2 flex-shrink-0">
-                <a [routerLink]="['/jobs', job.id]" (click)="removeDraft(job.id)"
-                  class="text-xs bg-green-600 hover:bg-green-700 text-white font-semibold px-3 py-1.5 rounded-lg transition-colors">
-                  Publish →
-                </a>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    }
-
-    <!-- Active jobs -->
+    <!-- My jobs -->
     <div class="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
       <div class="flex items-center justify-between mb-5">
-        <h2 class="font-bold text-gray-900">Published Jobs</h2>
+        <h2 class="font-bold text-gray-900">My Jobs</h2>
         <a routerLink="/jobs/new" class="text-sm text-purple-600 hover:underline font-medium">+ Post new</a>
       </div>
 
@@ -94,23 +63,27 @@
             <div class="h-16 bg-gray-100 rounded-xl animate-pulse"></div>
           }
         </div>
-      } @else if (recentJobs.length === 0) {
+      } @else if (myJobs.length === 0) {
         <div class="text-center py-10">
-          <p class="text-gray-500 mb-3">No published jobs yet.</p>
+          <p class="text-gray-500 mb-3">No jobs posted yet.</p>
           <a routerLink="/jobs/new" class="text-purple-600 font-medium hover:underline text-sm">Post your first job →</a>
         </div>
       } @else {
         <div class="divide-y divide-gray-100">
-          @for (job of recentJobs; track job.id) {
+          @for (job of myJobs; track job.id) {
             <div class="py-4 flex items-center justify-between gap-4">
               <div class="min-w-0">
                 <p class="font-medium text-gray-900 truncate">{{ job.title }}</p>
-                <p class="text-xs text-gray-400 mt-0.5">{{ job.location }}</p>
+                <p class="text-xs text-gray-400 mt-0.5">{{ job.location }} · {{ formatDate(job.createdAtUtc) }}</p>
               </div>
               <div class="flex items-center gap-3 flex-shrink-0">
-                <span class="text-xs font-semibold px-2.5 py-1 rounded-full {{ statusClass(job.status) }}">
+                <span [class]="'text-xs font-semibold px-2.5 py-1 rounded-full ' + statusClass(job.status)">
                   {{ job.status }}
                 </span>
+                @if (job.status === 'Active') {
+                  <a [routerLink]="['/jobs', job.id, 'applications']"
+                    class="text-xs text-blue-600 hover:underline font-medium">Applicants</a>
+                }
                 <a [routerLink]="['/jobs', job.id]"
                   class="text-xs text-purple-600 hover:underline font-medium">Manage →</a>
               </div>

@@ -1,4 +1,5 @@
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using TalentBridge.Identity.Application.Interfaces;
 using TalentBridge.Identity.Domain.Entities;
@@ -22,9 +23,14 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
         if (!Enum.TryParse<UserRole>(request.Role, true, out var role))
             throw new ArgumentException($"Invalid role: {request.Role}");
 
+        var emailLower = request.Email.ToLowerInvariant();
+        var exists = await _dbContext.Users.AnyAsync(u => u.Email == emailLower, cancellationToken);
+        if (exists)
+            throw new InvalidOperationException("An account with this email address already exists.");
+
         var passwordHash = BCrypt.Net.BCrypt.HashPassword(request.Password);
 
-        var result = User.Create(request.Email, passwordHash, role);
+        var result = User.Create(request.Email, passwordHash, role, request.FullName);
 
         if (result.IsFailure)
             throw new ArgumentException(result.Error);
@@ -36,6 +42,6 @@ public class RegisterCommandHandler : IRequestHandler<RegisterCommand, RegisterR
 
         _logger.LogInformation("[Identity] User {UserId} registered with role {Role}", user.Id, role);
 
-        return new RegisterResult(user.Id, user.Email, user.Role.ToString());
+        return new RegisterResult(user.Id, user.Email, user.Role.ToString(), user.FullName);
     }
 }

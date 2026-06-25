@@ -1,0 +1,181 @@
+<div class="min-h-screen bg-gray-50 py-8 px-4">
+  <div class="max-w-6xl mx-auto">
+
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-red-600 to-red-800 rounded-2xl p-8 mb-8 text-white">
+      <div class="flex items-center gap-4">
+        <div class="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+          <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="text-red-200 text-sm font-medium mb-1">System Administration</p>
+          <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+          <div class="flex gap-3 mt-2">
+            <span class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              {{ users.length }} Users
+            </span>
+            <span class="bg-white/20 text-white text-xs font-semibold px-3 py-1 rounded-full">
+              {{ jobs.length }} Jobs
+            </span>
+            @if (pendingCompanies.length > 0) {
+              <span class="bg-amber-400 text-amber-900 text-xs font-semibold px-3 py-1 rounded-full">
+                {{ pendingCompanies.length }} Pending Approval
+              </span>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 mb-6">
+      <button (click)="activeTab = 'users'"
+        [class]="'px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' +
+          (activeTab === 'users' ? 'bg-red-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')">
+        Users
+      </button>
+      <button (click)="activeTab = 'jobs'"
+        [class]="'px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' +
+          (activeTab === 'jobs' ? 'bg-red-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')">
+        Jobs
+      </button>
+      <button (click)="activeTab = 'companies'"
+        [class]="'relative px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors ' +
+          (activeTab === 'companies' ? 'bg-red-600 text-white' : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50')">
+        Companies
+        @if (pendingCompanies.length > 0) {
+          <span class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-amber-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            {{ pendingCompanies.length }}
+          </span>
+        }
+      </button>
+    </div>
+
+    <!-- Users tab -->
+    @if (activeTab === 'users') {
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100">
+          <h2 class="font-bold text-gray-900">All Users</h2>
+        </div>
+        @if (loadingUsers) {
+          <div class="p-6 space-y-3">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+            }
+          </div>
+        } @else if (usersError) {
+          <p class="p-6 text-red-500 text-sm">{{ usersError }}</p>
+        } @else {
+          <div class="divide-y divide-gray-100">
+            @for (user of users; track user.id) {
+              <div class="px-6 py-4 flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="font-medium text-gray-900 truncate">{{ user.email }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ user.fullName || '—' }} · Joined {{ formatDate(user.createdAtUtc) }}</p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                  <span [class]="'text-xs font-semibold px-2.5 py-1 rounded-full ' + roleBadge(user.role)">
+                    {{ user.role }}
+                  </span>
+                  @if (user.isActive) {
+                    <span class="text-xs text-green-600 font-medium">Active</span>
+                    <button (click)="deactivateUser(user.id)"
+                      class="text-xs text-red-600 hover:underline font-medium">
+                      Deactivate
+                    </button>
+                  } @else {
+                    <span class="text-xs text-gray-400 font-medium">Inactive</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Companies tab -->
+    @if (activeTab === 'companies') {
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100 flex items-center justify-between">
+          <h2 class="font-bold text-gray-900">All Companies</h2>
+          @if (pendingCompanies.length > 0) {
+            <span class="text-xs bg-amber-100 text-amber-700 font-semibold px-3 py-1 rounded-full">
+              {{ pendingCompanies.length }} pending approval
+            </span>
+          }
+        </div>
+        @if (loadingCompanies) {
+          <div class="p-6 space-y-3">
+            @for (i of [1,2,3]; track i) {
+              <div class="h-14 bg-gray-100 rounded-xl animate-pulse"></div>
+            }
+          </div>
+        } @else if (companies.length === 0) {
+          <p class="p-6 text-gray-500 text-sm text-center">No companies registered yet.</p>
+        } @else {
+          <div class="divide-y divide-gray-100">
+            @for (company of companies; track company.id) {
+              <div class="px-6 py-4 flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="font-medium text-gray-900 truncate">{{ company.name }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5 truncate max-w-xs">{{ company.description }}</p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                  @if (company.isApproved) {
+                    <span class="text-xs font-semibold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">Approved</span>
+                  } @else {
+                    <span class="text-xs font-semibold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">Pending</span>
+                    <button (click)="approveCompany(company.id)"
+                      class="text-xs bg-green-600 hover:bg-green-700 text-white font-medium px-3 py-1.5 rounded-lg transition-colors">
+                      Approve
+                    </button>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Jobs tab -->
+    @if (activeTab === 'jobs') {
+      <div class="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="p-6 border-b border-gray-100">
+          <h2 class="font-bold text-gray-900">All Jobs</h2>
+        </div>
+        @if (loadingJobs) {
+          <div class="p-6 space-y-3">
+            @for (i of [1,2,3,4,5]; track i) {
+              <div class="h-12 bg-gray-100 rounded-xl animate-pulse"></div>
+            }
+          </div>
+        } @else if (jobsError) {
+          <p class="p-6 text-red-500 text-sm">{{ jobsError }}</p>
+        } @else {
+          <div class="divide-y divide-gray-100">
+            @for (job of jobs; track job.id) {
+              <div class="px-6 py-4 flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                  <p class="font-medium text-gray-900 truncate">{{ job.title }}</p>
+                  <p class="text-xs text-gray-400 mt-0.5">{{ job.location }} · {{ formatDate(job.createdAtUtc) }}</p>
+                </div>
+                <div class="flex items-center gap-3 flex-shrink-0">
+                  <span [class]="'text-xs font-semibold px-2.5 py-1 rounded-full ' + statusBadge(job.status)">
+                    {{ job.status }}
+                  </span>
+                  <a [routerLink]="['/jobs', job.id]" class="text-xs text-blue-600 hover:underline font-medium">View</a>
+                </div>
+              </div>
+            }
+          </div>
+        }
+      </div>
+    }
+
+  </div>
+</div>

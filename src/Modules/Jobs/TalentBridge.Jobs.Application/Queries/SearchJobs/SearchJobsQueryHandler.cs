@@ -1,6 +1,5 @@
 using MediatR;
 using Microsoft.Extensions.Caching.Hybrid;
-using Microsoft.Extensions.Logging;
 using TalentBridge.Jobs.Application.DTOs;
 using TalentBridge.Jobs.Domain.Repositories;
 
@@ -10,18 +9,16 @@ public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, List<JobD
 {
     private readonly IJobRepository _repository;
     private readonly HybridCache _cache;
-    private readonly ILogger<SearchJobsQueryHandler> _logger;
 
-    public SearchJobsQueryHandler(IJobRepository repository, HybridCache cache, ILogger<SearchJobsQueryHandler> logger)
+    public SearchJobsQueryHandler(IJobRepository repository, HybridCache cache)
     {
         _repository = repository;
         _cache = cache;
-        _logger = logger;
     }
 
     public async Task<List<JobDto>> Handle(SearchJobsQuery request, CancellationToken cancellationToken)
     {
-        var cacheKey = $"jobs:search:{request.Keyword}:{request.Location}:{request.Page}:{request.Size}";
+        var cacheKey = $"jobs:search:{request.Keyword}:{request.Location}:{request.SalaryMin}:{request.SalaryMax}:{request.Page}:{request.Size}";
 
         var result = await _cache.GetOrCreateAsync(
             cacheKey,
@@ -30,6 +27,8 @@ public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, List<JobD
                 var jobs = await _repository.SearchAsync(
                     request.Keyword ?? string.Empty,
                     request.Location,
+                    request.SalaryMin,
+                    request.SalaryMax,
                     ct);
 
                 return jobs.Select(job => new JobDto(
@@ -51,6 +50,7 @@ public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, List<JobD
                 Expiration = TimeSpan.FromMinutes(5),
                 LocalCacheExpiration = TimeSpan.FromMinutes(1)
             },
+            tags: ["jobs"],
             cancellationToken: cancellationToken);
 
         return result ?? [];

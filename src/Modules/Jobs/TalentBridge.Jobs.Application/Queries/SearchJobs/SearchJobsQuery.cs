@@ -7,4 +7,6 @@ public record SearchJobsQuery(
     string? Keyword,
     string? Location,
     int Page,
-    int Size) : IRequest<List<JobDto>>;
+    int Size,
+    decimal? SalaryMin = null,
+    decimal? SalaryMax = null) : IRequest<List<JobDto>>;

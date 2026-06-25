@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using TalentBridge.Applications.Application.Interfaces;
 using TalentBridge.Applications.Domain.Aggregates;
+using TalentBridge.Shared.Interfaces;
 using TalentBridge.Shared.Outbox;
 
 namespace TalentBridge.Applications.Application.Commands.Apply;
@@ -10,11 +11,16 @@ namespace TalentBridge.Applications.Application.Commands.Apply;
 public class ApplyCommandHandler : IRequestHandler<ApplyCommand, ApplyResult>
 {
     private readonly IApplicationsDbContext _dbContext;
+    private readonly INotificationService _notificationService;
     private readonly ILogger<ApplyCommandHandler> _logger;
 
-    public ApplyCommandHandler(IApplicationsDbContext dbContext, ILogger<ApplyCommandHandler> logger)
+    public ApplyCommandHandler(
+        IApplicationsDbContext dbContext,
+        INotificationService notificationService,
+        ILogger<ApplyCommandHandler> logger)
     {
         _dbContext = dbContext;
+        _notificationService = notificationService;
         _logger = logger;
     }
 
@@ -56,6 +62,11 @@ public class ApplyCommandHandler : IRequestHandler<ApplyCommand, ApplyResult>
             _logger.LogInformation(
                 "[Applications] Application {Id} + outbox row committed atomically",
                 application.Id);
+
+            await _notificationService.CreateAsync(
+                request.CandidateId,
+                "Your application has been submitted successfully. We'll notify you when the HR team reviews it.",
+                cancellationToken);
 
             return new ApplyResult(application.Id, application.Status.ToString());
         }

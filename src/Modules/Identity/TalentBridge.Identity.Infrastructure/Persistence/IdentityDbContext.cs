@@ -21,6 +21,15 @@ public class IdentityDbContext : DbContext, IIdentityDbContext
             e.HasIndex(u => u.Email).IsUnique();
             e.Property(u => u.PasswordHash).IsRequired();
             e.Property(u => u.Role).HasConversion<string>();
+            e.Property(u => u.FullName).HasMaxLength(200).HasDefaultValue("");
+            e.Property(u => u.IsActive).HasDefaultValue(true);
+            e.Property(u => u.Phone).HasMaxLength(30);
+            e.Property(u => u.Title).HasMaxLength(100);
+            e.Property(u => u.Bio).HasMaxLength(2000);
+            e.Property(u => u.Skills).HasMaxLength(1000);
+            e.Property(u => u.ResumeUrl).HasMaxLength(500);
+            e.Property(u => u.LinkedInUrl).HasMaxLength(300);
+            e.Property(u => u.GitHubUrl).HasMaxLength(300);
             e.Ignore(u => u.DomainEvents);
         });
     }

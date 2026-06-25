@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 
 const TOKEN_KEY = 'tb_token';
+const REFRESH_KEY = 'tb_refresh_token';
 
 @Injectable({ providedIn: 'root' })
 export class TokenService {
@@ -17,6 +18,23 @@ export class TokenService {
     localStorage.removeItem(TOKEN_KEY);
   }
 
+  setRefreshToken(token: string): void {
+    localStorage.setItem(REFRESH_KEY, token);
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_KEY);
+  }
+
+  removeRefreshToken(): void {
+    localStorage.removeItem(REFRESH_KEY);
+  }
+
+  clearAll(): void {
+    this.removeToken();
+    this.removeRefreshToken();
+  }
+
   decodeToken(): Record<string, any> | null {
     const token = this.getToken();
     if (!token) return null;
@@ -24,10 +42,8 @@ export class TokenService {
       const parts = token.split('.');
       if (parts.length !== 3) return null;
       const payload = parts[1];
-      // Pad base64 string to a multiple of 4
       const padded = payload + '='.repeat((4 - payload.length % 4) % 4);
-      const decoded = atob(padded);
-      return JSON.parse(decoded);
+      return JSON.parse(atob(padded));
     } catch {
       return null;
     }
@@ -36,7 +52,6 @@ export class TokenService {
   getUserId(): string | null {
     const decoded = this.decodeToken();
     if (!decoded) return null;
-    // Try common JWT sub claim keys
     return decoded['sub']
       || decoded['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier']
       || decoded['nameid']

@@ -22,23 +22,16 @@ export class CandidateDashboardComponent implements OnInit {
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
-      if (user?.userId) {
-        // Load from localStorage first (works even without backend endpoint deployed)
-        const local: ApplicationSummary[] = JSON.parse(localStorage.getItem('tb_my_applications') ?? '[]');
+    });
 
-        this.applicationService.getMyApplications(user.userId).subscribe({
-          next: apps => {
-            // Merge API results with local; API wins if it has data
-            this.applications = apps.length > 0 ? apps : local;
-            this.loadingApps = false;
-          },
-          error: () => {
-            // API endpoint not deployed yet — fall back to localStorage
-            this.applications = local;
-            this.loadingApps = false;
-          }
-        });
-      } else {
+    this.applicationService.getMyApplications().subscribe({
+      next: apps => {
+        this.applications = apps;
+        this.loadingApps = false;
+      },
+      error: () => {
+        const local: ApplicationSummary[] = JSON.parse(localStorage.getItem('tb_my_applications') ?? '[]');
+        this.applications = local;
         this.loadingApps = false;
       }
     });

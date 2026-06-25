@@ -2,7 +2,11 @@ import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { RouterModule } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { AuthService, CurrentUser } from '../../core/auth/auth.service';
+import { ToastService } from '../../core/services/toast.service';
+import { FileUploadComponent } from '../../shared/components/file-upload/file-upload.component';
+import { environment } from '../../../environments/environment';
 
 interface CandidateProfile {
   fullName: string;
@@ -21,17 +25,20 @@ const PROFILE_KEY = 'tb_candidate_profile';
 @Component({
   selector: 'app-profile',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, RouterModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterModule, FileUploadComponent],
   templateUrl: './profile.component.html'
 })
 export class ProfileComponent implements OnInit {
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+  private toast = inject(ToastService);
+  private http = inject(HttpClient);
+  private readonly apiUrl = environment.apiUrl;
 
   currentUser: CurrentUser | null = null;
   form!: FormGroup;
   editMode = false;
-  saved = false;
+  saving = false;
 
   ngOnInit(): void {
     this.authService.currentUser$.subscribe(u => { this.currentUser = u; });
@@ -47,6 +54,25 @@ export class ProfileComponent implements OnInit {
       resumeUrl: [stored.resumeUrl],
       linkedinUrl: [stored.linkedinUrl],
       githubUrl: [stored.githubUrl]
+    });
+
+    // Load profile from backend and merge with localStorage
+    this.http.get<any>(`${this.apiUrl}/api/identity/me`).subscribe({
+      next: (user) => {
+        const merged = {
+          fullName: user.fullName || stored.fullName,
+          phone: user.phone || stored.phone,
+          location: stored.location,
+          title: user.title || stored.title,
+          bio: user.bio || stored.bio,
+          skills: user.skills || stored.skills,
+          resumeUrl: user.resumeUrl || stored.resumeUrl,
+          linkedinUrl: user.linkedInUrl || stored.linkedinUrl,
+          githubUrl: user.gitHubUrl || stored.githubUrl
+        };
+        this.form.patchValue(merged);
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(merged));
+      }
     });
   }
 
@@ -75,7 +101,6 @@ export class ProfileComponent implements OnInit {
 
   startEdit(): void {
     this.editMode = true;
-    this.saved = false;
   }
 
   cancel(): void {
@@ -84,14 +109,42 @@ export class ProfileComponent implements OnInit {
     this.editMode = false;
   }
 
+  onResumeUploaded(url: string): void {
+    this.form.patchValue({ resumeUrl: url });
+    this.toast.success('Resume uploaded!');
+  }
+
   save(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(this.form.value));
-    this.editMode = false;
-    this.saved = true;
-    setTimeout(() => { this.saved = false; }, 3000);
+    this.saving = true;
+    const v = this.form.value;
+
+    this.http.patch(`${this.apiUrl}/api/identity/profile`, {
+      fullName: v.fullName,
+      phone: v.phone || null,
+      title: v.title || null,
+      bio: v.bio || null,
+      skills: v.skills || null,
+      resumeUrl: v.resumeUrl || null,
+      linkedInUrl: v.linkedinUrl || null,
+      gitHubUrl: v.githubUrl || null
+    }).subscribe({
+      next: () => {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(v));
+        this.editMode = false;
+        this.saving = false;
+        this.toast.success('Profile saved!');
+      },
+      error: () => {
+        // Save locally even if API fails
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(v));
+        this.editMode = false;
+        this.saving = false;
+        this.toast.warning('Saved locally. Changes will sync when online.');
+      }
+    });
   }
 }

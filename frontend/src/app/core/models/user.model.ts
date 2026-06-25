@@ -7,12 +7,20 @@ export interface RegisterRequest {
   email: string;
   password: string;
   role: string;
+  fullName?: string;
 }
 
 export interface AuthResponse {
   token: string;
+  refreshToken: string;
   expiresAt: string;
   userRole: string;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
 }
 
 export enum UserRole {

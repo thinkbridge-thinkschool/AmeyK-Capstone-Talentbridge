@@ -3,6 +3,7 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
 import { JobService } from '../../../core/services/job.service';
 import { AuthService } from '../../../core/auth/auth.service';
+import { ApplicationService, ApplicationSummary } from '../../../core/services/application.service';
 import { Job } from '../../../core/models/job.model';
 import { UserRole } from '../../../core/models/user.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
@@ -18,8 +19,10 @@ export class JobDetailComponent implements OnInit {
   private router = inject(Router);
   private jobService = inject(JobService);
   private authService = inject(AuthService);
+  private applicationService = inject(ApplicationService);
 
   job: Job | null = null;
+  existingApplication: ApplicationSummary | null = null;
   loading = true;
   errorMessage = '';
   actionLoading = false;
@@ -33,8 +36,12 @@ export class JobDetailComponent implements OnInit {
   get isAdmin(): boolean { return this.authService.getRole() === UserRole.Admin; }
   get isLoggedIn(): boolean { return this.authService.isLoggedIn(); }
 
+  get alreadyApplied(): boolean { return !!this.existingApplication; }
+
   get canApply(): boolean {
-    return this.isLoggedIn && this.isCandidate && (this.job?.status === 'Active' || this.job?.status === 'Published');
+    return this.isLoggedIn && this.isCandidate &&
+      !this.alreadyApplied &&
+      (this.job?.status === 'Active' || this.job?.status === 'Published');
   }
 
   get canPublish(): boolean {
@@ -57,6 +64,9 @@ export class JobDetailComponent implements OnInit {
       next: (job) => {
         this.job = job;
         this.loading = false;
+        if (this.isCandidate) {
+          this.existingApplication = this.applicationService.getExistingApplication(id);
+        }
       },
       error: () => {
         this.loading = false;
@@ -71,7 +81,7 @@ export class JobDetailComponent implements OnInit {
     this.actionSuccess = '';
     this.actionError = '';
 
-    this.jobService.publishJob(this.job.id, this.job.companyId).subscribe({
+    this.jobService.publishJob(this.job.id).subscribe({
       next: () => {
         this.actionLoading = false;
         this.actionSuccess = 'Job published successfully!';
@@ -90,7 +100,7 @@ export class JobDetailComponent implements OnInit {
     this.actionSuccess = '';
     this.actionError = '';
 
-    this.jobService.closeJob(this.job.id, this.job.companyId).subscribe({
+    this.jobService.closeJob(this.job.id).subscribe({
       next: () => {
         this.actionLoading = false;
         this.actionSuccess = 'Job closed successfully.';

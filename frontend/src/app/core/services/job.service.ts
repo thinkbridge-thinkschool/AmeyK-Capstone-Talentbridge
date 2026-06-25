@@ -5,6 +5,14 @@ import { map } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
 import { Job, JobSearchResult, PostJobRequest, normalizeJobStatus } from '../models/job.model';
 
+export interface UpdateJobRequest {
+  title: string;
+  description: string;
+  location: string;
+  salaryMin: number;
+  salaryMax: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class JobService {
   private http = inject(HttpClient);
@@ -14,7 +22,9 @@ export class JobService {
     keyword: string = '',
     location: string = '',
     page: number = 1,
-    size: number = 10
+    size: number = 10,
+    salaryMin?: number,
+    salaryMax?: number
   ): Observable<JobSearchResult> {
     let params = new HttpParams()
       .set('page', page.toString())
@@ -22,6 +32,8 @@ export class JobService {
 
     if (keyword) params = params.set('keyword', keyword);
     if (location) params = params.set('location', location);
+    if (salaryMin != null) params = params.set('salaryMin', salaryMin.toString());
+    if (salaryMax != null) params = params.set('salaryMax', salaryMax.toString());
 
     return this.http.get<Job[] | JobSearchResult>(`${this.apiUrl}/api/jobs/search`, { params }).pipe(
       map(resp => {
@@ -41,15 +53,29 @@ export class JobService {
     );
   }
 
+  getMyJobs(): Observable<Job[]> {
+    return this.http.get<Job[]>(`${this.apiUrl}/api/jobs/mine`).pipe(
+      map(jobs => jobs.map(j => ({ ...j, status: normalizeJobStatus(j.status) })))
+    );
+  }
+
   postJob(req: PostJobRequest): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/api/jobs`, req);
   }
 
-  publishJob(id: string, companyId: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/api/jobs/${id}/publish?companyId=${companyId}`, {});
+  updateJob(id: string, req: UpdateJobRequest): Observable<any> {
+    return this.http.put(`${this.apiUrl}/api/jobs/${id}`, req);
   }
 
-  closeJob(id: string, companyId: string): Observable<any> {
-    return this.http.post(`${this.apiUrl}/api/jobs/${id}/close?companyId=${companyId}`, {});
+  deleteJob(id: string): Observable<any> {
+    return this.http.delete(`${this.apiUrl}/api/jobs/${id}`);
+  }
+
+  publishJob(id: string): Observable<any> {
+    return this.http.post(`${this.apiUrl}/api/jobs/${id}/publish`, {});
+  }
+
+  closeJob(id: string): Observable<any> {
+    return this.http.patch(`${this.apiUrl}/api/jobs/${id}/close`, {});
   }
 }

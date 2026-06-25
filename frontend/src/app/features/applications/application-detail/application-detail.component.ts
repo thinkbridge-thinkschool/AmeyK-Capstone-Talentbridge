@@ -6,11 +6,13 @@ import { AuthService } from '../../../core/auth/auth.service';
 import { JobApplication, ApplicationAction } from '../../../core/models/application.model';
 import { UserRole } from '../../../core/models/user.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { StatusTimelineComponent } from '../../../shared/components/status-timeline/status-timeline.component';
+import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-application-detail',
   standalone: true,
-  imports: [CommonModule, RouterModule, StatusBadgeComponent],
+  imports: [CommonModule, RouterModule, StatusBadgeComponent, StatusTimelineComponent],
   templateUrl: './application-detail.component.html'
 })
 export class ApplicationDetailComponent implements OnInit {
@@ -18,13 +20,12 @@ export class ApplicationDetailComponent implements OnInit {
   private router = inject(Router);
   private applicationService = inject(ApplicationService);
   private authService = inject(AuthService);
+  private toast = inject(ToastService);
 
   application: JobApplication | null = null;
   loading = true;
   errorMessage = '';
   actionLoading = false;
-  actionSuccess = '';
-  actionError = '';
 
   UserRole = UserRole;
 
@@ -93,8 +94,6 @@ export class ApplicationDetailComponent implements OnInit {
   performAction(action: ApplicationAction): void {
     if (!this.application) return;
     this.actionLoading = true;
-    this.actionSuccess = '';
-    this.actionError = '';
 
     const newStatus = this.actionToStatus[action];
     this.applicationService.updateStatus(this.application.id, newStatus).subscribe({
@@ -103,11 +102,11 @@ export class ApplicationDetailComponent implements OnInit {
         if (this.application) {
           this.application = { ...this.application, status: newStatus };
         }
-        this.actionSuccess = `Status updated to ${newStatus}.`;
+        this.toast.success(`Status updated to ${newStatus}.`);
       },
       error: (err) => {
         this.actionLoading = false;
-        this.actionError = err?.error?.message ?? 'Failed to update status.';
+        this.toast.error(err?.error?.message ?? 'Failed to update status.');
       }
     });
   }

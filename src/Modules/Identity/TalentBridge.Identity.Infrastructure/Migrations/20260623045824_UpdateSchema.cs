@@ -11,39 +11,24 @@ namespace TalentBridge.Identity.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "CompanyId",
-                table: "Users");
+            // Drop legacy columns only if they exist (migration was applied against different DB state)
+            migrationBuilder.Sql("IF COL_LENGTH('[Users]', 'CompanyId') IS NOT NULL ALTER TABLE [Users] DROP COLUMN [CompanyId];");
+            migrationBuilder.Sql("IF COL_LENGTH('[Users]', 'FirstName') IS NOT NULL ALTER TABLE [Users] DROP COLUMN [FirstName];");
+            migrationBuilder.Sql("IF COL_LENGTH('[Users]', 'IsActive') IS NOT NULL ALTER TABLE [Users] DROP COLUMN [IsActive];");
+            migrationBuilder.Sql("IF COL_LENGTH('[Users]', 'LastName') IS NOT NULL ALTER TABLE [Users] DROP COLUMN [LastName];");
 
-            migrationBuilder.DropColumn(
-                name: "FirstName",
-                table: "Users");
+            // Rename LastLoginAt → RefreshTokenExpiresAtUtc only if the old column still exists
+            migrationBuilder.Sql(@"
+                IF COL_LENGTH('[Users]', 'LastLoginAt') IS NOT NULL AND COL_LENGTH('[Users]', 'RefreshTokenExpiresAtUtc') IS NULL
+                    EXEC sp_rename '[Users].[LastLoginAt]', 'RefreshTokenExpiresAtUtc', 'COLUMN';");
 
-            migrationBuilder.DropColumn(
-                name: "IsActive",
-                table: "Users");
-
-            migrationBuilder.DropColumn(
-                name: "LastName",
-                table: "Users");
-
-            migrationBuilder.RenameColumn(
-                name: "LastLoginAt",
-                table: "Users",
-                newName: "RefreshTokenExpiresAtUtc");
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "CreatedAtUtc",
-                table: "Users",
-                type: "datetime2",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<string>(
-                name: "RefreshToken",
-                table: "Users",
-                type: "nvarchar(max)",
-                nullable: true);
+            // Add new columns only if they don't exist
+            migrationBuilder.Sql(@"
+                IF COL_LENGTH('[Users]', 'CreatedAtUtc') IS NULL
+                    ALTER TABLE [Users] ADD [CreatedAtUtc] datetime2 NOT NULL DEFAULT '0001-01-01T00:00:00.000';");
+            migrationBuilder.Sql(@"
+                IF COL_LENGTH('[Users]', 'RefreshToken') IS NULL
+                    ALTER TABLE [Users] ADD [RefreshToken] nvarchar(max) NULL;");
         }
 
         /// <inheritdoc />

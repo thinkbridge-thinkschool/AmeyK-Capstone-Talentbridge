@@ -18,7 +18,13 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationsDbContext>(sp => sp.GetRequiredService<ApplicationsDbContext>());
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
-        services.AddScoped<IResumeStorageService, AzureResumeStorageService>();
+
+        var storageConn = configuration["Storage:ConnectionString"];
+        var hasAzureStorage = !string.IsNullOrWhiteSpace(storageConn) && storageConn != "SET_IN_KEYVAULT";
+        if (hasAzureStorage)
+            services.AddScoped<IResumeStorageService, AzureResumeStorageService>();
+        else
+            services.AddScoped<IResumeStorageService, LocalResumeStorageService>();
 
         return services;
     }

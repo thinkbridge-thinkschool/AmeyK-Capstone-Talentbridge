@@ -4,7 +4,7 @@ import { Router } from '@angular/router';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { TokenService } from './token.service';
-import { AuthResponse, LoginRequest, RegisterRequest, UserRole } from '../models/user.model';
+import { AuthResponse, LoginRequest, RefreshTokenResponse, RegisterRequest, UserRole } from '../models/user.model';
 
 export interface CurrentUser {
   email: string;
@@ -33,20 +33,32 @@ export class AuthService {
   }
 
   login(req: LoginRequest): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(`${this.apiUrl}/api/auth/login`, req).pipe(
+    return this.http.post<AuthResponse>(`${this.apiUrl}/api/identity/login`, req).pipe(
       tap(res => {
         this.tokenService.setToken(res.token);
+        this.tokenService.setRefreshToken(res.refreshToken);
         this._currentUser$.next(this.buildCurrentUser());
       })
     );
   }
 
   register(req: RegisterRequest): Observable<any> {
-    return this.http.post(`${this.apiUrl}/api/auth/register`, req);
+    return this.http.post(`${this.apiUrl}/api/identity/register`, req);
+  }
+
+  refreshToken(): Observable<RefreshTokenResponse> {
+    const refreshToken = this.tokenService.getRefreshToken();
+    return this.http.post<RefreshTokenResponse>(`${this.apiUrl}/api/identity/refresh`, { refreshToken }).pipe(
+      tap(res => {
+        this.tokenService.setToken(res.accessToken);
+        this.tokenService.setRefreshToken(res.refreshToken);
+        this._currentUser$.next(this.buildCurrentUser());
+      })
+    );
   }
 
   logout(): void {
-    this.tokenService.removeToken();
+    this.tokenService.clearAll();
     this._currentUser$.next(null);
     this.router.navigate(['/auth/login']);
   }

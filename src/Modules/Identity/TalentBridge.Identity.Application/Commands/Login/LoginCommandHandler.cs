@@ -30,11 +30,21 @@ public class LoginCommandHandler : IRequestHandler<LoginCommand, Result<LoginRes
             return Result<LoginResult>.Failure("Invalid credentials");
         }
 
+        if (!user.IsActive)
+        {
+            _logger.LogWarning("[Identity] Deactivated user {Email} attempted login", request.Email);
+            return Result<LoginResult>.Failure("Account is deactivated.");
+        }
+
         var token = _tokenService.GenerateToken(user);
+        var refreshToken = _tokenService.GenerateRefreshToken();
         var expiresAt = DateTime.UtcNow.AddHours(8);
+
+        user.SetRefreshToken(refreshToken, DateTime.UtcNow.AddDays(7));
+        await _dbContext.SaveChangesAsync(cancellationToken);
 
         _logger.LogInformation("[Identity] User {UserId} logged in", user.Id);
 
-        return Result<LoginResult>.Success(new LoginResult(token, expiresAt, user.Role.ToString()));
+        return Result<LoginResult>.Success(new LoginResult(token, refreshToken, expiresAt, user.Role.ToString()));
     }
 }
