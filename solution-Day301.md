@@ -205,6 +205,26 @@ TalentBridge is built as a **Modular Monolith** — five independent bounded con
 
 ---
 
+## Performance — Hot Path P99
+
+Hot path: `GET /api/jobs/search` (most-called public endpoint, backed by HybridCache)
+
+| Scenario | avg | p50 | p95 | p99 |
+|---|---|---|---|---|
+| **Before** — cache MISS, every request hits Azure SQL | 284.7 ms | 278 ms | 343 ms | 348 ms |
+| **After** — cache HIT, served from L1 in-process HybridCache | 83.3 ms | 81 ms | 94 ms | **110 ms** |
+| **Improvement** | **3.4×** | **3.4×** | **3.6×** | **3.2×** |
+
+**How it works:**
+- L1 (in-process): 2-minute TTL — subsequent requests for the same query skip SQL entirely
+- L2 (distributed): 10-minute TTL — survives pod restarts, shared across multiple API instances
+- Cache key includes all search parameters (keyword, location, salary range, page)
+- Cache is invalidated on job publish/close via `IHybridCacheSerializer`
+
+**Benchmark method:** 30 cache-miss requests (unique `?keyword=benchN` per request, forces DB hit) vs 30 cache-hit requests (same URL, L1 already warm), measured with `System.Diagnostics.Stopwatch` against the live Azure SQL-backed API.
+
+---
+
 ## Tests — 32/32 Passing
 
 ![Test Results](docs/ScreenShots/test-results-32-pass.png)
