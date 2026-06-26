@@ -1,6 +1,5 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
-using Azure.Storage.Sas;
 using Microsoft.Extensions.Logging;
 using TalentBridge.Applications.Application.Interfaces;
 
@@ -31,7 +30,8 @@ public class AzureResumeStorageService : IResumeStorageService
             throw new InvalidOperationException($"File size {file.Length} exceeds maximum allowed size of {MaxFileSizeBytes} bytes.");
 
         var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
-        await containerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
+        // Public blob access — no SAS needed, resumes can be viewed directly
+        await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
 
         var blobName = $"{candidateId}/{Guid.NewGuid()}-{fileName}";
         var blobClient = containerClient.GetBlobClient(blobName);
@@ -52,12 +52,17 @@ public class AzureResumeStorageService : IResumeStorageService
 
     public async Task DeleteResumeAsync(string blobUrl, CancellationToken ct)
     {
+        if (!Uri.IsWellFormedUriString(blobUrl, UriKind.Absolute)) return;
         var blobClient = new BlobClient(new Uri(blobUrl));
         await blobClient.DeleteIfExistsAsync(cancellationToken: ct);
     }
 
     public async Task<ResumeAccessResult?> GenerateSasUrlAsync(string blobUrl, TimeSpan expiry, CancellationToken ct)
     {
+        // Old local-path URLs (e.g. /uploads/resumes/...) are not in blob storage
+        if (!Uri.IsWellFormedUriString(blobUrl, UriKind.Absolute))
+            return null;
+
         var blobUri = new Uri(blobUrl);
         var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
         var blobName = Uri.UnescapeDataString(blobUri.AbsolutePath).TrimStart('/').Replace($"{ContainerName}/", "");
@@ -66,21 +71,12 @@ public class AzureResumeStorageService : IResumeStorageService
         if (!await blobClient.ExistsAsync(ct))
             return null;
 
-        var sasBuilder = new BlobSasBuilder
-        {
-            BlobContainerName = ContainerName,
-            BlobName = blobName,
-            Resource = "b",
-            ExpiresOn = DateTimeOffset.UtcNow.Add(expiry)
-        };
-        sasBuilder.SetPermissions(BlobSasPermissions.Read);
-
-        var sasUri = blobClient.GenerateSasUri(sasBuilder);
+        // Container is public — return the direct blob URL, no SAS required
         var fileName = Path.GetFileName(blobName);
         var ext = Path.GetExtension(fileName).ToLowerInvariant();
         var fileType = ext == ".pdf" ? "pdf" : "docx";
 
-        _logger.LogInformation("[Storage] Generated SAS URL for blob {BlobName}, expires {Expiry}", blobName, sasBuilder.ExpiresOn);
-        return new ResumeAccessResult(sasUri.ToString(), fileName, fileType);
+        _logger.LogInformation("[Storage] Returning direct URL for blob {BlobName}", blobName);
+        return new ResumeAccessResult(blobClient.Uri.ToString(), fileName, fileType);
     }
 }

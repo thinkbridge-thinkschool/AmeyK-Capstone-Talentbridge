@@ -52,15 +52,17 @@ var credential = ManagedCredential.Create();
 var sbNamespace = config["ServiceBus:Namespace"]
     ?? "talentbridge-sb-amey.servicebus.windows.net";
 builder.Services.AddSingleton(new ServiceBusClient(sbNamespace, credential));
-var storageUri = config["Storage:ServiceUri"]
-    ?? "https://talentbridgestamey2.blob.core.windows.net/";
-builder.Services.AddSingleton(new BlobServiceClient(new Uri(storageUri), credential));
-
 var storageConnection = config["Storage:ConnectionString"];
 if (!string.IsNullOrWhiteSpace(storageConnection) && storageConnection != "SET_IN_KEYVAULT")
+{
     builder.Services.AddSingleton(new BlobServiceClient(storageConnection));
+}
 else
-    builder.Services.AddSingleton(new BlobServiceClient(new Uri("https://placeholder.blob.core.windows.net")));
+{
+    var storageUri = config["Storage:ServiceUri"]
+        ?? "https://talentbridgestamey2.blob.core.windows.net/";
+    builder.Services.AddSingleton(new BlobServiceClient(new Uri(storageUri), credential));
+}
 // ── OpenTelemetry → Azure App Insights ───────────────────────────────────────
 var appInsightsCs = config["APPLICATIONINSIGHTS_CONNECTION_STRING"]
     ?? config["AzureMonitor:ConnectionString"];
@@ -241,7 +243,7 @@ app.Use(async (context, next) =>
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
         "font-src 'self' data: https://fonts.gstatic.com; " +
         "img-src 'self' data: blob:; " +
-        "connect-src 'self';";
+        "connect-src 'self' https://talentbridgestamey2.blob.core.windows.net;";
     context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
     context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
     context.Response.Headers.Remove("X-Powered-By");

@@ -22,7 +22,9 @@ public static class DependencyInjection
         services.AddScoped<IResumeMatchingStrategy, KeywordMatchingStrategy>();
 
         var storageConn = configuration["Storage:ConnectionString"];
-        var hasAzureStorage = !string.IsNullOrWhiteSpace(storageConn) && storageConn != "SET_IN_KEYVAULT";
+        var storageUri = configuration["Storage:ServiceUri"];
+        var hasAzureStorage = (!string.IsNullOrWhiteSpace(storageConn) && storageConn != "SET_IN_KEYVAULT")
+                           || !string.IsNullOrWhiteSpace(storageUri);
         if (hasAzureStorage)
             services.AddScoped<IResumeStorageService, AzureResumeStorageService>();
         else
