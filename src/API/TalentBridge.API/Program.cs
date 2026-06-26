@@ -137,13 +137,13 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
-    // Auth policy: 5 requests per 15 minutes per IP — applied via [EnableRateLimiting("auth")]
+    // Auth policy: relaxed in dev (50/15 min); tighten to 5 before prod deploy
     options.AddPolicy("auth", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = builder.Environment.IsDevelopment() ? 50 : 5,
                 Window = TimeSpan.FromMinutes(15),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0
@@ -235,7 +235,13 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Frame-Options"] = "DENY";
     context.Response.Headers["X-XSS-Protection"] = "1; mode=block";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    context.Response.Headers["Content-Security-Policy"] = "default-src 'self'";
+    context.Response.Headers["Content-Security-Policy"] =
+        "default-src 'self'; " +
+        "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+        "style-src 'self' 'unsafe-inline'; " +
+        "img-src 'self' data: blob:; " +
+        "font-src 'self' data:; " +
+        "connect-src 'self';";
     context.Response.Headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains";
     context.Response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
     context.Response.Headers.Remove("X-Powered-By");

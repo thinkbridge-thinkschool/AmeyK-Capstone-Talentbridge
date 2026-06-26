@@ -111,6 +111,39 @@
         Don't have an account?
         <a routerLink="/auth/register" class="text-blue-600 hover:text-blue-800 font-semibold">Create one</a>
       </p>
+
+      <!-- Demo credentials -->
+      <div class="mt-6 pt-5 border-t border-gray-100">
+        <p class="text-center text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Demo accounts — click to fill</p>
+        <div class="grid grid-cols-2 gap-3">
+
+          <!-- Candidate -->
+          <button type="button"
+            (click)="fillDemo('yash@gmail.com', 'Yash@123')"
+            class="text-left p-3 rounded-xl border-2 border-blue-100 bg-blue-50 hover:border-blue-400 hover:bg-blue-100 transition-all cursor-pointer group">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0"></span>
+              <span class="text-xs font-bold text-blue-700">Candidate</span>
+            </div>
+            <p class="text-xs text-gray-600 font-medium truncate">yash&#64;gmail.com</p>
+            <p class="text-xs text-gray-400">Yash&#64;123</p>
+          </button>
+
+          <!-- HR -->
+          <button type="button"
+            (click)="fillDemo('amey@gmail.com', 'Amey@123')"
+            class="text-left p-3 rounded-xl border-2 border-purple-100 bg-purple-50 hover:border-purple-400 hover:bg-purple-100 transition-all cursor-pointer group">
+            <div class="flex items-center gap-1.5 mb-1">
+              <span class="w-2 h-2 rounded-full bg-purple-500 flex-shrink-0"></span>
+              <span class="text-xs font-bold text-purple-700">Company HR</span>
+            </div>
+            <p class="text-xs text-gray-600 font-medium truncate">amey&#64;gmail.com</p>
+            <p class="text-xs text-gray-400">Amey&#64;123</p>
+          </button>
+
+        </div>
+      </div>
+
     </div>
   </div>
 </div>

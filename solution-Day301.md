@@ -205,52 +205,76 @@ TalentBridge is built as a **Modular Monolith** — five independent bounded con
 
 ---
 
-## Performance — Hot Path P99
+## CI Run (Green)
 
-Hot path: `GET /api/jobs/search` (most-called public endpoint, backed by HybridCache)
+**URL:** https://github.com/thinkbridge-thinkschool/AmeyK-Capstone-Talentbridge/actions/runs/28173350638/job/83443067337
 
-| Scenario | avg | p50 | p95 | p99 |
+![Test Results](docs/ScreenShots/test-results-32-pass.png)
+
+---
+
+## Test Coverage at Each Layer
+
+### Unit (23 tests, ~20s, no I/O)
+
+| Suite | Tests | What is covered |
+|---|---|---|
+| `TalentBridge.Identity.Domain.Tests` | 7 | User aggregate — create, BCrypt hash, refresh token issue/revoke, duplicate email guard |
+| `TalentBridge.Jobs.Domain.Tests` | 8 | Job aggregate state machine — Draft→Active→Closed, validation guards, IsAcceptingApplications |
+| `TalentBridge.Applications.Domain.Tests` | 8 | JobApplication aggregate — all 6 status transitions (Submitted→UnderReview→Shortlisted→Accepted/Rejected, Withdraw), invalid transition guards |
+
+**Total: 23 tests — all green**
+
+Coverage (Coverlet / Cobertura):
+
+| Domain Layer | Line | Branch |
+|---|---|---|
+| `Identity.Domain` | 65.4% | 75.0% |
+| `Jobs.Domain` | 79.4% | 37.5% |
+| `Applications.Domain` | 74.5% | 55.0% |
+
+---
+
+### Integration (9 tests, WebApplicationFactory + InMemory EF Core)
+
+| Suite | Tests | What is covered |
+|---|---|---|
+| `IdentityEndpointTests` | 4 | Register, duplicate email → 400, login → JWT, wrong password → 401 |
+| `JobsEndpointTests` | 3 | GET /search (public → 200), POST no-auth → 401, POST as HR → 201 |
+| `HappyPathE2ETests` | 1 | Full 12-step hiring flow (see below) |
+
+**Total: 9 tests — all green**
+
+Full stack line coverage (all 5 modules): **26.6%** — lower because it exercises one happy path; uncovered lines are error branches and admin-only flows.
+
+**E2E flow (HappyPathE2ETests — 12 steps):**
+Register HR → Login → Get hrId → Post Job → Register Candidate → Login → Get candidateId → Search Jobs → Apply → HR moves to UnderReview → HR Shortlists → Candidate sees status = "Shortlisted"
+
+---
+
+## Hot-Path p99 Before/After Polish
+
+**GET /api/jobs/search** (most-called public endpoint, backed by HybridCache)
+
+```
+Benchmark: 30 cache-miss requests (unique ?keyword=benchN forces DB hit)
+       vs  30 cache-hit  requests (same URL, L1 HybridCache already warm)
+Measured with System.Diagnostics.Stopwatch against live Azure SQL-backed API.
+```
+
+| | avg | p50 | p95 | p99 |
 |---|---|---|---|---|
 | **Before** — cache MISS, every request hits Azure SQL | 284.7 ms | 278 ms | 343 ms | 348 ms |
 | **After** — cache HIT, served from L1 in-process HybridCache | 83.3 ms | 81 ms | 94 ms | **110 ms** |
 | **Improvement** | **3.4×** | **3.4×** | **3.6×** | **3.2×** |
 
-**How it works:**
-- L1 (in-process): 2-minute TTL — subsequent requests for the same query skip SQL entirely
-- L2 (distributed): 10-minute TTL — survives pod restarts, shared across multiple API instances
-- Cache key includes all search parameters (keyword, location, salary range, page)
-- Cache is invalidated on job publish/close via `IHybridCacheSerializer`
+**What changed (Before → After):**
 
-**Benchmark method:** 30 cache-miss requests (unique `?keyword=benchN` per request, forces DB hit) vs 30 cache-hit requests (same URL, L1 already warm), measured with `System.Diagnostics.Stopwatch` against the live Azure SQL-backed API.
+Before: `JobsController → SearchJobsQueryHandler → JobsDbContext.Jobs.Where(...).ToListAsync()` — full Azure SQL round-trip on every request
 
----
+After: `JobsController → SearchJobsQueryHandler → HybridCache.GetOrCreateAsync(key, ...)` — L1 in-process cache (2-min TTL) serves from memory; L2 distributed (10-min TTL) survives restarts
 
-## Tests — 32/32 Passing
-
-![Test Results](docs/ScreenShots/test-results-32-pass.png)
-
-```
-Suite                                    Tests   Result
-────────────────────────────────────────────────────────
-Identity.Domain.Tests                      7     ✓ PASS
-Jobs.Domain.Tests                          8     ✓ PASS
-Applications.Domain.Tests                  8     ✓ PASS
-Integration.Tests (HTTP end-to-end)        9     ✓ PASS
-────────────────────────────────────────────────────────
-Total                                     32     0 failed
-```
-
-### Integration Test Coverage
-The integration tests spin up the full ASP.NET Core pipeline (no mocks) and exercise real HTTP flows:
-
-- Register + duplicate email guard
-- Login → JWT token returned
-- Wrong password → 401
-- Job search without auth → 200
-- Post job without auth → 401
-- Post job as HR → 201 + jobId returned
-- **Full E2E hiring flow** (12 steps):
-  HR registers → posts job → Candidate registers → applies → HR reviews → HR shortlists → Candidate sees "Shortlisted"
+Cold path: ~285 ms → ~83 ms avg. p99 drops from 348 ms to 110 ms.
 
 ---
 

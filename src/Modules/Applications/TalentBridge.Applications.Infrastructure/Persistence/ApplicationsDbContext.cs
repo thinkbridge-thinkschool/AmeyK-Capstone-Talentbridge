@@ -27,6 +27,7 @@ public class ApplicationsDbContext : DbContext, IApplicationsDbContext
             e.Property(a => a.CoverLetter).IsRequired().HasMaxLength(5000);
             e.Property(a => a.ResumeUrl).IsRequired();
             e.Property(a => a.Status).HasConversion<string>();
+            e.Property(a => a.MatchPercentage).HasColumnType("decimal(5,2)");
             e.HasIndex(a => a.JobId);
             e.HasIndex(a => a.CandidateId);
             e.Ignore(a => a.DomainEvents);

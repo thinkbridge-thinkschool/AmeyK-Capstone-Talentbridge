@@ -1,6 +1,30 @@
 <div class="min-h-screen bg-gray-50 py-8 px-4">
   <div class="max-w-5xl mx-auto">
 
+    <!-- Confirm Dialog -->
+    @if (confirmDialog) {
+      <div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-xl p-8 max-w-sm w-full mx-4">
+          <h3 class="text-lg font-bold text-gray-900 mb-2">Confirm Action</h3>
+          <p class="text-gray-600 text-sm mb-6">
+            Are you sure you want to mark this application as
+            <span class="font-semibold">{{ confirmDialog.label }}</span>?
+            This cannot be undone.
+          </p>
+          <div class="flex gap-3 justify-end">
+            <button (click)="cancelConfirm()"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 transition-colors">
+              Cancel
+            </button>
+            <button (click)="confirmStatusChange()"
+              class="px-4 py-2 rounded-lg text-sm font-medium bg-red-500 hover:bg-red-600 text-white transition-colors">
+              Confirm
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+
     <!-- Breadcrumb -->
     <nav class="mb-6 text-sm text-gray-500">
       <a routerLink="/dashboard/hr" class="hover:text-purple-600">Dashboard</a>
@@ -95,21 +119,38 @@
                     <p class="text-xs text-gray-400 font-mono">{{ app.candidateId }}</p>
                   </div>
                 </div>
-                <div class="flex flex-wrap gap-3 text-xs text-gray-500 ml-13">
+
+                <div class="flex flex-wrap items-center gap-3 text-xs text-gray-500 ml-1 mt-2">
                   <span>Applied {{ formatDate(app.submittedAtUtc) }}</span>
+
+                  <!-- Match % pill -->
+                  @if (app.matchPercentage != null) {
+                    <span [class]="'font-bold px-2.5 py-0.5 rounded-full ' + matchPillClass(app.matchPercentage)">
+                      {{ app.matchPercentage }}% match
+                    </span>
+                  }
+
+                  <!-- View Resume button -->
                   @if (app.resumeUrl) {
-                    <a [href]="app.resumeUrl" target="_blank" rel="noopener"
-                      class="text-blue-600 hover:underline flex items-center gap-1">
-                      <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                          d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/>
-                      </svg>
-                      Resume
-                    </a>
+                    <button
+                      (click)="viewResume(app.id, app.resumeUrl)"
+                      [disabled]="resumeLoadingId === app.id"
+                      class="flex items-center gap-1 text-blue-600 hover:text-blue-800 font-medium disabled:opacity-50 transition-colors">
+                      @if (resumeLoadingId === app.id) {
+                        <span class="inline-block w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></span>
+                      } @else {
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                        </svg>
+                      }
+                      View Resume
+                    </button>
                   }
                 </div>
+
                 <!-- Cover letter preview -->
-                <p class="mt-3 text-sm text-gray-600 line-clamp-2 ml-13">{{ app.coverLetter }}</p>
+                <p class="mt-3 text-sm text-gray-600 line-clamp-2">{{ app.coverLetter }}</p>
               </div>
 
               <!-- Right: status + actions -->
@@ -119,7 +160,7 @@
                 <div class="flex flex-wrap gap-2 justify-end">
                   @for (action of actionsFor(app.status); track action.next) {
                     <button
-                      (click)="updateStatus(app.id, action.next)"
+                      (click)="requestStatusChange(app.id, action.next, action.label)"
                       [disabled]="actionLoadingId === app.id"
                       [class]="'px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors disabled:opacity-50 ' + action.cls">
                       @if (actionLoadingId === app.id) {
@@ -134,6 +175,7 @@
                   </a>
                 </div>
               </div>
+
             </div>
           </div>
         }

@@ -33,7 +33,9 @@ public class GetApplicationByIdQueryHandler : IRequestHandler<GetApplicationById
                 a.ResumeUrl,
                 a.SubmittedAtUtc,
                 a.LastUpdatedAtUtc,
-                a.ReviewNotes))
+                a.ReviewNotes,
+                a.MatchPercentage,
+                a.ReviewedByHRId))
             .FirstOrDefaultAsync(cancellationToken);
     }
 }

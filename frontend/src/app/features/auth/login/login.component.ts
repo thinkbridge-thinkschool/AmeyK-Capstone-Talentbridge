@@ -69,4 +69,9 @@ export class LoginComponent implements OnInit {
   togglePassword(): void {
     this.showPassword = !this.showPassword;
   }
+
+  fillDemo(email: string, password: string): void {
+    this.form.setValue({ email, password });
+    this.errorMessage = '';
+  }
 }

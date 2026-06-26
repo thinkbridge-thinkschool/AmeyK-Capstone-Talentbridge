@@ -9,4 +9,6 @@ public record ApplicationDetailDto(
     string ResumeUrl,
     DateTime SubmittedAtUtc,
     DateTime LastUpdatedAtUtc,
-    string? RejectionReason = null);
+    string? RejectionReason = null,
+    decimal? MatchPercentage = null,
+    Guid? ReviewedByHRId = null);

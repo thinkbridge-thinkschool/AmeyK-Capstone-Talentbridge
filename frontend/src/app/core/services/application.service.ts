@@ -13,7 +13,15 @@ export interface ApplicationSummary {
   resumeUrl: string;
   submittedAtUtc: string;
   lastUpdatedAtUtc: string;
+  matchPercentage?: number;
+  reviewedByHRId?: string;
   jobTitle?: string;
+}
+
+export interface ResumePreview {
+  url: string;
+  fileName: string;
+  fileType: string;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -50,5 +58,13 @@ export class ApplicationService {
 
   withdraw(id: string): Observable<any> {
     return this.http.patch(`${this.apiUrl}/api/applications/${id}/withdraw`, {});
+  }
+
+  getResumePreview(id: string): Observable<ResumePreview> {
+    return this.http.get<ResumePreview>(`${this.apiUrl}/api/applications/${id}/resume`);
+  }
+
+  getMatch(id: string): Observable<{ percentage: number; matchedSkills: string[]; missingSkills: string[] }> {
+    return this.http.get<any>(`${this.apiUrl}/api/applications/${id}/match`);
   }
 }

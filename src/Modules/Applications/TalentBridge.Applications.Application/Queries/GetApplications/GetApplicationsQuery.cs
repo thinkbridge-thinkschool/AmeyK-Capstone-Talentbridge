@@ -10,6 +10,8 @@ public record ApplicationSummaryDto(
     string CoverLetter,
     string ResumeUrl,
     DateTime SubmittedAtUtc,
-    DateTime LastUpdatedAtUtc);
+    DateTime LastUpdatedAtUtc,
+    decimal? MatchPercentage = null,
+    Guid? ReviewedByHRId = null);
 
 public record GetApplicationsQuery(Guid? CandidateId, Guid? JobId) : IRequest<List<ApplicationSummaryDto>>;

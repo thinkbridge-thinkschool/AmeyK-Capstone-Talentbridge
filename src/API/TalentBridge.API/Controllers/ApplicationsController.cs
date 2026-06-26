@@ -4,9 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using TalentBridge.Applications.Application.Commands.Apply;
 using TalentBridge.Applications.Application.Commands.UpdateStatus;
 using TalentBridge.Applications.Application.Commands.Withdraw;
+using TalentBridge.Applications.Application.Interfaces;
 using TalentBridge.Applications.Application.Queries.GetApplication;
 using TalentBridge.Applications.Application.Queries.GetApplicationHistory;
 using TalentBridge.Applications.Application.Queries.GetApplications;
+using TalentBridge.Applications.Application.Queries.GetApplicationMatch;
 using TalentBridge.Shared.Interfaces;
 
 namespace TalentBridge.API.Controllers;
@@ -17,11 +19,13 @@ public class ApplicationsController : ControllerBase
 {
     private readonly IMediator _mediator;
     private readonly ICurrentUserService _currentUser;
+    private readonly IResumeStorageService _storage;
 
-    public ApplicationsController(IMediator mediator, ICurrentUserService currentUser)
+    public ApplicationsController(IMediator mediator, ICurrentUserService currentUser, IResumeStorageService storage)
     {
         _mediator = mediator;
         _currentUser = currentUser;
+        _storage = storage;
     }
 
     [HttpGet("my")]
@@ -81,6 +85,28 @@ public class ApplicationsController : ControllerBase
     {
         var result = await _mediator.Send(new GetApplicationHistoryQuery(id), ct);
         return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/resume")]
+    [Authorize]
+    public async Task<IActionResult> GetResume(Guid id, CancellationToken ct)
+    {
+        var application = await _mediator.Send(new GetApplicationByIdQuery(id), ct);
+        if (application is null) return NotFound("Application not found.");
+        if (string.IsNullOrEmpty(application.ResumeUrl)) return NotFound("Resume not found.");
+
+        var result = await _storage.GenerateSasUrlAsync(application.ResumeUrl, TimeSpan.FromMinutes(15), ct);
+        if (result is null) return NotFound("Resume not found.");
+
+        return Ok(result);
+    }
+
+    [HttpGet("{id:guid}/match")]
+    [Authorize]
+    public async Task<IActionResult> GetMatch(Guid id, CancellationToken ct)
+    {
+        var result = await _mediator.Send(new GetApplicationMatchQuery(id), ct);
+        return result is null ? NotFound("Application not found.") : Ok(result);
     }
 }
 

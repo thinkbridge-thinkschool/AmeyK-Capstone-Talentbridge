@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using TalentBridge.Applications.Application.Interfaces;
+using TalentBridge.Applications.Application.Services;
 using TalentBridge.Applications.Domain.Repositories;
 using TalentBridge.Applications.Infrastructure.Persistence;
 using TalentBridge.Applications.Infrastructure.Storage;
@@ -18,6 +19,7 @@ public static class DependencyInjection
 
         services.AddScoped<IApplicationsDbContext>(sp => sp.GetRequiredService<ApplicationsDbContext>());
         services.AddScoped<IApplicationRepository, ApplicationRepository>();
+        services.AddScoped<IResumeMatchingStrategy, KeywordMatchingStrategy>();
 
         var storageConn = configuration["Storage:ConnectionString"];
         var hasAzureStorage = !string.IsNullOrWhiteSpace(storageConn) && storageConn != "SET_IN_KEYVAULT";

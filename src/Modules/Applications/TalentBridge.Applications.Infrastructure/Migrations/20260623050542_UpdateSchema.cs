@@ -11,51 +11,20 @@ namespace TalentBridge.Applications.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.DropColumn(
-                name: "Error",
-                table: "ApplicationsOutboxMessages");
+            // Idempotent drops
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ApplicationsOutboxMessages]') AND name = 'Error') ALTER TABLE [ApplicationsOutboxMessages] DROP COLUMN [Error];");
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ApplicationsOutboxMessages]') AND name = 'RetryCount') ALTER TABLE [ApplicationsOutboxMessages] DROP COLUMN [RetryCount];");
 
-            migrationBuilder.DropColumn(
-                name: "RetryCount",
-                table: "ApplicationsOutboxMessages");
+            // Idempotent renames — only rename if old column still exists
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[JobApplications]') AND name = 'RejectionReason') EXEC sp_rename '[JobApplications].[RejectionReason]', 'ReviewNotes', 'COLUMN';");
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[JobApplications]') AND name = 'AppliedAt') EXEC sp_rename '[JobApplications].[AppliedAt]', 'SubmittedAtUtc', 'COLUMN';");
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ApplicationsOutboxMessages]') AND name = 'ProcessedAt') EXEC sp_rename '[ApplicationsOutboxMessages].[ProcessedAt]', 'ProcessedOnUtc', 'COLUMN';");
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ApplicationsOutboxMessages]') AND name = 'EventType') EXEC sp_rename '[ApplicationsOutboxMessages].[EventType]', 'Type', 'COLUMN';");
+            migrationBuilder.Sql("IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[ApplicationsOutboxMessages]') AND name = 'CreatedAt') EXEC sp_rename '[ApplicationsOutboxMessages].[CreatedAt]', 'OccurredOnUtc', 'COLUMN';");
 
-            migrationBuilder.RenameColumn(
-                name: "RejectionReason",
-                table: "JobApplications",
-                newName: "ReviewNotes");
-
-            migrationBuilder.RenameColumn(
-                name: "AppliedAt",
-                table: "JobApplications",
-                newName: "SubmittedAtUtc");
-
-            migrationBuilder.RenameColumn(
-                name: "ProcessedAt",
-                table: "ApplicationsOutboxMessages",
-                newName: "ProcessedOnUtc");
-
-            migrationBuilder.RenameColumn(
-                name: "EventType",
-                table: "ApplicationsOutboxMessages",
-                newName: "Type");
-
-            migrationBuilder.RenameColumn(
-                name: "CreatedAt",
-                table: "ApplicationsOutboxMessages",
-                newName: "OccurredOnUtc");
-
-            migrationBuilder.AddColumn<DateTime>(
-                name: "LastUpdatedAtUtc",
-                table: "JobApplications",
-                type: "datetime2",
-                nullable: false,
-                defaultValue: new DateTime(1, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified));
-
-            migrationBuilder.AddColumn<Guid>(
-                name: "ReviewedByHRId",
-                table: "JobApplications",
-                type: "uniqueidentifier",
-                nullable: true);
+            // Idempotent adds
+            migrationBuilder.Sql("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[JobApplications]') AND name = 'LastUpdatedAtUtc') ALTER TABLE [JobApplications] ADD [LastUpdatedAtUtc] datetime2 NOT NULL DEFAULT '0001-01-01T00:00:00.000';");
+            migrationBuilder.Sql("IF NOT EXISTS (SELECT 1 FROM sys.columns WHERE object_id = OBJECT_ID(N'[JobApplications]') AND name = 'ReviewedByHRId') ALTER TABLE [JobApplications] ADD [ReviewedByHRId] uniqueidentifier NULL;");
         }
 
         /// <inheritdoc />

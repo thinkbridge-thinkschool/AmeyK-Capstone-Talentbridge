@@ -141,49 +141,49 @@
 
     <!-- Job grid -->
     @if (!loading && jobs.length > 0) {
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5 jobs-grid">
         @for (job of jobs; track job.id) {
-          <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all group">
+          <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 hover:shadow-md hover:border-blue-200 transition-all group" style="display:flex;flex-direction:column;gap:0">
 
-            <!-- Header -->
-            <div class="flex items-start justify-between mb-3">
-              <div class="flex-1 min-w-0">
-                <h3 class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors text-base leading-snug truncate pr-2">
+            <!-- Header row: logo + title + badge -->
+            <div class="flex items-start gap-3 mb-3">
+              <div class="tb-company-logo" style="flex-shrink:0">
+                {{ job.title[0].toUpperCase() }}
+              </div>
+              <div style="flex:1;min-width:0">
+                <h3 class="font-semibold text-gray-900 group-hover:text-blue-700 transition-colors text-sm leading-snug truncate">
                   {{ job.title }}
                 </h3>
+                <div class="flex items-center gap-1.5 text-gray-500 mt-0.5" style="font-size:0.72rem">
+                  <svg class="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                  </svg>
+                  {{ job.location }}
+                </div>
               </div>
               <app-status-badge [status]="job.status"></app-status-badge>
             </div>
 
-            <!-- Location -->
-            <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-2">
-              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0zM15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-              </svg>
-              {{ job.location }}
-            </div>
-
             <!-- Salary -->
-            <div class="flex items-center gap-1.5 text-gray-500 text-sm mb-4">
-              <svg class="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div class="flex items-center gap-1.5 text-gray-500 text-xs mb-3">
+              <svg class="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
               </svg>
-              {{ formatSalary(job.salaryMin, job.salaryMax) }}/yr
+              <span class="font-medium text-gray-700">{{ formatSalary(job.salaryMin, job.salaryMax) }}/yr</span>
             </div>
 
             <!-- Description snippet -->
-            <p class="text-gray-500 text-sm mb-5 line-clamp-2 leading-relaxed">
+            <p class="text-gray-500 text-xs mb-4 line-clamp-2 leading-relaxed" style="flex:1">
               {{ job.description }}
             </p>
 
             <!-- Footer -->
-            <div class="flex items-center justify-between">
+            <div class="flex items-center justify-between" style="border-top:1px solid var(--tb-border);padding-top:0.75rem;margin-top:auto">
               <span class="text-xs text-gray-400">{{ formatDate(job.createdAtUtc) }}</span>
               <a [routerLink]="['/jobs', job.id]"
-                class="inline-flex items-center gap-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-sm font-semibold px-4 py-2 rounded-lg transition-colors">
-                View
-                
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                class="inline-flex items-center gap-1.5 bg-blue-50 hover:bg-blue-600 text-blue-700 hover:text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors">
+                View Job
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
                 </svg>
               </a>
@@ -195,38 +195,69 @@
 
     <!-- Pagination -->
     @if (totalPages > 1 && !loading) {
-      <div class="mt-10 flex items-center justify-center gap-2">
-        <button
-          (click)="goToPage(currentPage - 1)"
-          [disabled]="currentPage === 1"
-          class="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">
-          &larr; Prev
-        </button>
+      <div class="mt-10">
 
-        @for (page of pages; track page) {
+        <!-- Page info -->
+        <p class="text-center text-sm text-gray-400 mb-4">
+          Showing {{ (currentPage - 1) * pageSize + 1 }}–{{ currentPage * pageSize > totalCount ? totalCount : currentPage * pageSize }}
+          of <span class="font-semibold text-gray-600">{{ totalCount }}</span> jobs
+        </p>
+
+        <!-- Buttons -->
+        <div class="flex items-center justify-center gap-1.5 flex-wrap">
+
+          <!-- First page -->
           <button
-            (click)="goToPage(page)"
-            [class]="'px-4 py-2 rounded-lg border text-sm font-medium transition-colors ' +
-              (page === currentPage
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'border-gray-300 text-gray-600 hover:bg-gray-100')">
-            {{ page }}
+            (click)="goToPage(1)"
+            [disabled]="currentPage === 1"
+            class="px-3 py-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm font-medium">
+            «
           </button>
-        }
 
-        <button
-          (click)="goToPage(currentPage + 1)"
-          [disabled]="currentPage === totalPages"
-          class="px-3 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors text-sm">
-          Next &rarr;
-        </button>
+          <!-- Prev -->
+          <button
+            (click)="goToPage(currentPage - 1)"
+            [disabled]="currentPage === 1"
+            class="flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm font-medium">
+            &larr; Prev
+          </button>
+
+          <!-- Page numbers -->
+          @for (page of pages; track page) {
+            <button
+              (click)="goToPage(page)"
+              [class]="'w-10 h-10 rounded-lg border text-sm font-semibold transition-colors ' +
+                (page === currentPage
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                  : 'border-gray-300 text-gray-600 hover:bg-blue-50 hover:border-blue-300 hover:text-blue-700')">
+              {{ page }}
+            </button>
+          }
+
+          <!-- Next -->
+          <button
+            (click)="goToPage(currentPage + 1)"
+            [disabled]="currentPage === totalPages"
+            class="flex items-center gap-1 px-4 py-2 rounded-lg border border-gray-300 text-gray-600 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm font-medium">
+            Next &rarr;
+          </button>
+
+          <!-- Last page -->
+          <button
+            (click)="goToPage(totalPages)"
+            [disabled]="currentPage === totalPages"
+            class="px-3 py-2 rounded-lg border border-gray-300 text-gray-500 hover:bg-gray-100 disabled:opacity-30 disabled:cursor-not-allowed transition-colors text-sm font-medium">
+            »
+          </button>
+
+        </div>
+
+        <!-- Page X of Y -->
+        <p class="text-center text-xs text-gray-400 mt-3">
+          Page {{ currentPage }} of {{ totalPages }}
+        </p>
+
       </div>
-    }
-
-    @if (!loading && totalCount > 0) {
-      <p class="text-center text-sm text-gray-400 mt-4">
-        Showing {{ (currentPage - 1) * pageSize + 1 }}&ndash;{{ currentPage * pageSize > totalCount ? totalCount : currentPage * pageSize }} of {{ totalCount }} jobs
-      </p>
     }
   </div>
 </div>
