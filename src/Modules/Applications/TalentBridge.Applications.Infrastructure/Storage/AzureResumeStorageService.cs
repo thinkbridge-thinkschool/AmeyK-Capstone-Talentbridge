@@ -85,13 +85,7 @@ public class AzureResumeStorageService : IResumeStorageService
             var ext = Path.GetExtension(fileName).ToLowerInvariant();
             var fileType = ext == ".pdf" ? "pdf" : "docx";
 
-            // Generate a User Delegation SAS (works with Managed Identity, no account key needed)
             var expiresOn = DateTimeOffset.UtcNow.Add(expiry);
-            var delegationKey = await _blobServiceClient.GetUserDelegationKeyAsync(
-                DateTimeOffset.UtcNow.AddMinutes(-5),
-                expiresOn,
-                ct);
-
             var sasBuilder = new BlobSasBuilder
             {
                 BlobContainerName = ContainerName,
@@ -101,11 +95,25 @@ public class AzureResumeStorageService : IResumeStorageService
             };
             sasBuilder.SetPermissions(BlobSasPermissions.Read);
 
-            var sasToken = sasBuilder.ToSasQueryParameters(delegationKey, _blobServiceClient.AccountName);
-            var sasUrl = $"{blobClient.Uri}?{sasToken}";
+            Uri sasUri;
+            if (blobClient.CanGenerateSasUri)
+            {
+                // Connection string / account key available — sign SAS directly (no Azure AD needed)
+                sasUri = blobClient.GenerateSasUri(sasBuilder);
+            }
+            else
+            {
+                // Managed Identity / Azure AD — use User Delegation Key to sign SAS
+                var delegationKey = await _blobServiceClient.GetUserDelegationKeyAsync(
+                    DateTimeOffset.UtcNow.AddMinutes(-5),
+                    expiresOn,
+                    ct);
+                var sasToken = sasBuilder.ToSasQueryParameters(delegationKey, _blobServiceClient.AccountName);
+                sasUri = new Uri($"{blobClient.Uri}?{sasToken}");
+            }
 
-            _logger.LogInformation("[Storage] Generated SAS URL for blob {BlobName}", blobName);
-            return new ResumeAccessResult(sasUrl, fileName, fileType);
+            _logger.LogInformation("[Storage] Generated SAS URL for blob {BlobName} (canGenerate={CanGenerate})", blobName, blobClient.CanGenerateSasUri);
+            return new ResumeAccessResult(sasUri.ToString(), fileName, fileType);
         }
         catch (Azure.RequestFailedException ex)
         {
