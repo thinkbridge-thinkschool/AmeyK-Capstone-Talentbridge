@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using Microsoft.Extensions.Logging;
 using TalentBridge.Applications.Application.Interfaces;
 
@@ -29,18 +30,25 @@ public class AzureResumeStorageService : IResumeStorageService
         if (file.Length > MaxFileSizeBytes)
             throw new InvalidOperationException($"File size {file.Length} exceeds maximum allowed size of {MaxFileSizeBytes} bytes.");
 
-        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
-        // Public blob access — no SAS needed, resumes can be viewed directly
-        await containerClient.CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
+        try
+        {
+            var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+            // Private container — resumes accessed via time-limited SAS URLs
+            await containerClient.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
 
-        var blobName = $"{candidateId}/{Guid.NewGuid()}-{fileName}";
-        var blobClient = containerClient.GetBlobClient(blobName);
+            var blobName = $"{candidateId}/{Guid.NewGuid()}-{fileName}";
+            var blobClient = containerClient.GetBlobClient(blobName);
 
-        _logger.LogInformation("[Storage] Uploading resume for candidate {CandidateId}, size: {Size} bytes", candidateId, file.Length);
+            _logger.LogInformation("[Storage] Uploading resume for candidate {CandidateId}, size: {Size} bytes", candidateId, file.Length);
+            await blobClient.UploadAsync(file, new BlobHttpHeaders { ContentType = contentType }, cancellationToken: ct);
 
-        await blobClient.UploadAsync(file, new BlobHttpHeaders { ContentType = contentType }, cancellationToken: ct);
-
-        return blobClient.Uri.ToString();
+            return blobClient.Uri.ToString();
+        }
+        catch (Azure.RequestFailedException ex)
+        {
+            _logger.LogError(ex, "[Storage] Azure Blob upload failed: Status={Status} ErrorCode={ErrorCode}", ex.Status, ex.ErrorCode);
+            throw new InvalidOperationException($"Resume upload failed. Please try again. ({ex.ErrorCode})");
+        }
     }
 
     public async Task<Stream> DownloadResumeAsync(string blobUrl, CancellationToken ct)
@@ -63,20 +71,46 @@ public class AzureResumeStorageService : IResumeStorageService
         if (!Uri.IsWellFormedUriString(blobUrl, UriKind.Absolute))
             return null;
 
-        var blobUri = new Uri(blobUrl);
-        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
-        var blobName = Uri.UnescapeDataString(blobUri.AbsolutePath).TrimStart('/').Replace($"{ContainerName}/", "");
-        var blobClient = containerClient.GetBlobClient(blobName);
+        try
+        {
+            var blobUri = new Uri(blobUrl);
+            var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+            var blobName = Uri.UnescapeDataString(blobUri.AbsolutePath).TrimStart('/').Replace($"{ContainerName}/", "");
+            var blobClient = containerClient.GetBlobClient(blobName);
 
-        if (!await blobClient.ExistsAsync(ct))
+            if (!await blobClient.ExistsAsync(ct))
+                return null;
+
+            var fileName = Path.GetFileName(blobName);
+            var ext = Path.GetExtension(fileName).ToLowerInvariant();
+            var fileType = ext == ".pdf" ? "pdf" : "docx";
+
+            // Generate a User Delegation SAS (works with Managed Identity, no account key needed)
+            var expiresOn = DateTimeOffset.UtcNow.Add(expiry);
+            var delegationKey = await _blobServiceClient.GetUserDelegationKeyAsync(
+                DateTimeOffset.UtcNow.AddMinutes(-5),
+                expiresOn,
+                ct);
+
+            var sasBuilder = new BlobSasBuilder
+            {
+                BlobContainerName = ContainerName,
+                BlobName = blobName,
+                Resource = "b",
+                ExpiresOn = expiresOn
+            };
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+            var sasToken = sasBuilder.ToSasQueryParameters(delegationKey, _blobServiceClient.AccountName);
+            var sasUrl = $"{blobClient.Uri}?{sasToken}";
+
+            _logger.LogInformation("[Storage] Generated SAS URL for blob {BlobName}", blobName);
+            return new ResumeAccessResult(sasUrl, fileName, fileType);
+        }
+        catch (Azure.RequestFailedException ex)
+        {
+            _logger.LogError(ex, "[Storage] Failed to generate SAS URL: Status={Status} ErrorCode={ErrorCode}", ex.Status, ex.ErrorCode);
             return null;
-
-        // Container is public — return the direct blob URL, no SAS required
-        var fileName = Path.GetFileName(blobName);
-        var ext = Path.GetExtension(fileName).ToLowerInvariant();
-        var fileType = ext == ".pdf" ? "pdf" : "docx";
-
-        _logger.LogInformation("[Storage] Returning direct URL for blob {BlobName}", blobName);
-        return new ResumeAccessResult(blobClient.Uri.ToString(), fileName, fileType);
+        }
     }
 }
