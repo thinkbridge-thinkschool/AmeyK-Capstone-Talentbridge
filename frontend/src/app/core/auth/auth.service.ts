@@ -35,6 +35,7 @@ export class AuthService {
   login(req: LoginRequest): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(`${this.apiUrl}/api/identity/login`, req).pipe(
       tap(res => {
+        localStorage.removeItem('tb_candidate_profile');
         this.tokenService.setToken(res.token);
         this.tokenService.setRefreshToken(res.refreshToken);
         this._currentUser$.next(this.buildCurrentUser());
@@ -59,6 +60,7 @@ export class AuthService {
 
   logout(): void {
     this.tokenService.clearAll();
+    localStorage.removeItem('tb_candidate_profile');
     this._currentUser$.next(null);
     this.router.navigate(['/auth/login']);
   }
