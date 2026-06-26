@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup } from '@angular/forms';
-import { RouterModule } from '@angular/router';
+import { RouterModule, ActivatedRoute } from '@angular/router';
 import { debounceTime, distinctUntilChanged } from 'rxjs';
 import { JobService } from '../../../core/services/job.service';
 import { AuthService } from '../../../core/auth/auth.service';
@@ -19,6 +19,7 @@ export class JobListComponent implements OnInit {
   private jobService = inject(JobService);
   private authService = inject(AuthService);
   private fb = inject(FormBuilder);
+  private route = inject(ActivatedRoute);
 
   jobs: Job[] = [];
   totalCount = 0;
@@ -56,9 +57,12 @@ export class JobListComponent implements OnInit {
   showFilters = false;
 
   ngOnInit(): void {
+    const keyword = this.route.snapshot.queryParamMap.get('keyword') ?? '';
+    const location = this.route.snapshot.queryParamMap.get('location') ?? '';
+
     this.searchForm = this.fb.group({
-      keyword: [''],
-      location: [''],
+      keyword: [keyword],
+      location: [location],
       salaryMin: [null],
       salaryMax: [null]
     });

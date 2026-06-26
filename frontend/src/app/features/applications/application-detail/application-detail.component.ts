@@ -1,7 +1,7 @@
 import { Component, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import { ApplicationService } from '../../../core/services/application.service';
+import { ApplicationService, ResumePreview } from '../../../core/services/application.service';
 import { AuthService } from '../../../core/auth/auth.service';
 import { JobApplication, ApplicationAction } from '../../../core/models/application.model';
 import { UserRole } from '../../../core/models/user.model';
@@ -26,6 +26,7 @@ export class ApplicationDetailComponent implements OnInit {
   loading = true;
   errorMessage = '';
   actionLoading = false;
+  resumeLoading = false;
 
   UserRole = UserRole;
 
@@ -107,6 +108,21 @@ export class ApplicationDetailComponent implements OnInit {
       error: (err) => {
         this.actionLoading = false;
         this.toast.error(err?.error?.message ?? 'Failed to update status.');
+      }
+    });
+  }
+
+  viewResume(): void {
+    if (!this.application) return;
+    this.resumeLoading = true;
+    this.applicationService.getResumePreview(this.application.id).subscribe({
+      next: (preview: ResumePreview) => {
+        this.resumeLoading = false;
+        window.open(preview.url, '_blank');
+      },
+      error: () => {
+        this.resumeLoading = false;
+        this.toast.error('Resume not available. It may have been removed or not yet uploaded.');
       }
     });
   }

@@ -117,10 +117,14 @@
                 <div class="bg-gray-50 rounded-xl p-4">
                   <dt class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Resume</dt>
                   <dd>
-                    <a [href]="application.resumeUrl" target="_blank" rel="noopener noreferrer"
-                      class="text-blue-600 hover:text-blue-800 text-sm underline break-all">
-                      View Resume
-                    </a>
+                    @if (application.resumeUrl) {
+                      <button (click)="viewResume()" [disabled]="resumeLoading"
+                        class="text-blue-600 hover:text-blue-800 text-sm underline disabled:opacity-50 disabled:cursor-not-allowed">
+                        @if (resumeLoading) { Loading... } @else { View Resume }
+                      </button>
+                    } @else {
+                      <span class="text-gray-400 text-sm">No resume uploaded</span>
+                    }
                   </dd>
                 </div>
               </dl>
