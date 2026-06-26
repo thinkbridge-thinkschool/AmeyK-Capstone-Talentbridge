@@ -1,0 +1,429 @@
+<!-- ═══════════════════════════════════════════════════════════
+     HERO SECTION
+═══════════════════════════════════════════════════════════ -->
+<section class="relative min-h-screen flex items-center overflow-hidden bg-slate-900">
+
+  <!-- Animated background blobs -->
+  <div class="blob-1 absolute top-[-100px] left-[-100px] w-[500px] h-[500px] rounded-full opacity-30"
+       style="background: radial-gradient(circle, #3b82f6, #6366f1)"></div>
+  <div class="blob-2 absolute bottom-[-80px] right-[-80px] w-[450px] h-[450px] rounded-full opacity-25"
+       style="background: radial-gradient(circle, #8b5cf6, #ec4899)"></div>
+  <div class="blob-3 absolute top-[30%] right-[10%] w-[300px] h-[300px] rounded-full opacity-20"
+       style="background: radial-gradient(circle, #06b6d4, #3b82f6)"></div>
+
+  <!-- Subtle grid overlay -->
+  <div class="absolute inset-0 opacity-[0.04]"
+       style="background-image: linear-gradient(#fff 1px,transparent 1px),linear-gradient(90deg,#fff 1px,transparent 1px);
+              background-size: 40px 40px;"></div>
+
+  <!-- Floating left card -->
+  <div class="sl absolute left-8 top-1/3 hidden xl:block z-10 max-w-[200px]">
+    <div class="float-a bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-2xl">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="relative w-2.5 h-2.5 bg-green-400 rounded-full ping-dot text-green-400"></div>
+        <span class="text-green-300 text-xs font-semibold">New Match!</span>
+      </div>
+      <p class="text-white font-semibold text-sm">Senior .NET Developer</p>
+      <p class="text-slate-400 text-xs mt-1">TechCorp · Pune</p>
+      <p class="text-blue-300 text-xs font-semibold mt-1.5">$80K – $120K</p>
+    </div>
+
+    <div class="float-b bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-2xl mt-4">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">✅</span>
+        <span class="text-white text-xs font-semibold">Application Sent</span>
+      </div>
+      <p class="text-slate-300 text-xs">Angular Engineer · Bangalore</p>
+      <div class="mt-2 w-full bg-white/20 rounded-full h-1.5">
+        <div class="bg-blue-400 h-1.5 rounded-full" style="width:70%"></div>
+      </div>
+      <p class="text-slate-400 text-[10px] mt-1">Under Review</p>
+    </div>
+  </div>
+
+  <!-- Floating right card -->
+  <div class="sr absolute right-8 top-1/4 hidden xl:block z-10 max-w-[210px]">
+    <div class="float-c bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-2xl">
+      <div class="flex items-center gap-2 mb-2">
+        <span class="text-2xl">🎉</span>
+        <span class="text-white text-xs font-semibold">Shortlisted!</span>
+      </div>
+      <p class="text-slate-300 text-xs">DevOps Engineer · Remote</p>
+      <p class="text-green-300 text-xs font-semibold mt-1.5">Interview scheduled</p>
+    </div>
+
+    <div class="float-a bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-4 shadow-2xl mt-4">
+      <p class="text-slate-400 text-[10px] uppercase tracking-wide mb-1">Companies Hiring</p>
+      <div class="flex flex-col gap-1.5">
+        @for (c of ['TechCorp','Google','Infosys']; track c) {
+          <div class="flex items-center gap-2">
+            <div class="w-6 h-6 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center text-white text-[9px] font-bold">
+              {{ c[0] }}
+            </div>
+            <span class="text-white text-xs">{{ c }}</span>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero content -->
+  <div class="relative z-10 w-full max-w-4xl mx-auto px-6 py-32 text-center">
+
+    <!-- Badge -->
+    <div class="fu-0 inline-flex items-center gap-2 bg-blue-500/20 border border-blue-400/30 text-blue-300
+                rounded-full px-5 py-2 text-sm font-semibold mb-8 backdrop-blur-sm">
+      <span class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+      India's #1 Enterprise Hiring Platform · Powered by .NET 10 + Azure
+    </div>
+
+    <!-- Headline -->
+    <h1 class="fu-1 text-5xl sm:text-6xl lg:text-7xl font-black text-white leading-[1.05] mb-6">
+      Bridge the Gap Between<br>
+      <span class="grad-text">Talent</span> &amp; Opportunity
+    </h1>
+
+    <!-- Sub headline -->
+    <p class="fu-2 text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+      Discover verified job openings, apply with one click, and get hired faster.
+      Real-time tracking from <strong class="text-slate-200">Applied → Shortlisted → Hired</strong>.
+    </p>
+
+    <!-- Search bar -->
+    <div class="fu-3 search-bar flex flex-col sm:flex-row gap-0 bg-white rounded-2xl shadow-2xl overflow-hidden max-w-2xl mx-auto mb-12">
+      <div class="flex items-center gap-3 flex-1 px-5 py-4 border-b sm:border-b-0 sm:border-r border-slate-200">
+        <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M21 21l-4.35-4.35M17 11A6 6 0 115 11a6 6 0 0112 0z"/>
+        </svg>
+        <input [(ngModel)]="searchKeyword" (keyup.enter)="search()"
+               placeholder="Job title, skills, or keyword…"
+               class="w-full text-slate-800 placeholder-slate-400 text-sm font-medium bg-transparent focus:outline-none"/>
+      </div>
+      <div class="flex items-center gap-3 flex-1 px-5 py-4">
+        <svg class="w-5 h-5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+            d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        <input [(ngModel)]="searchLocation" (keyup.enter)="search()"
+               placeholder="City, state, or Remote…"
+               class="w-full text-slate-800 placeholder-slate-400 text-sm font-medium bg-transparent focus:outline-none"/>
+      </div>
+      <button (click)="search()"
+              class="bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold px-8 py-4
+                     transition-colors text-sm tracking-wide whitespace-nowrap">
+        Search Jobs →
+      </button>
+    </div>
+
+    <!-- Quick tags -->
+    <div class="fu-3 flex flex-wrap justify-center gap-2 mb-12">
+      @for (tag of ['Remote','Full-Time','Internship','.NET','Angular','DevOps','Cloud']; track tag) {
+        <button (click)="searchKeyword = tag; search()"
+                class="tag-pill bg-white/10 hover:bg-white/20 border border-white/20 text-slate-300
+                       hover:text-white transition-colors cursor-pointer">
+          {{ tag }}
+        </button>
+      }
+    </div>
+
+    <!-- Stats grid -->
+    <div class="fu-4 grid grid-cols-2 sm:grid-cols-4 gap-4 max-w-2xl mx-auto">
+      @for (s of stats; track s.label) {
+        <div class="bg-white/8 backdrop-blur-md border border-white/10 rounded-2xl p-5">
+          <div class="text-3xl mb-1">{{ s.icon }}</div>
+          <div class="text-2xl font-black text-white">{{ s.value }}</div>
+          <div class="text-slate-400 text-xs mt-0.5">{{ s.label }}</div>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- Bottom wave -->
+  <div class="absolute bottom-0 left-0 right-0">
+    <svg viewBox="0 0 1440 80" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+      <path d="M0 80 L0 40 Q360 0 720 40 Q1080 80 1440 40 L1440 80 Z" fill="#f8fafc"/>
+    </svg>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TRUSTED BY — MARQUEE
+═══════════════════════════════════════════════════════════ -->
+<section class="bg-slate-50 py-12">
+  <p class="text-center text-slate-400 text-sm font-semibold uppercase tracking-widest mb-8">
+    Trusted by leading companies
+  </p>
+  <div class="marquee-wrap">
+    <div class="marquee-track">
+      @for (c of companiesRow.concat(companiesRow); track $index) {
+        <div class="mx-10 shrink-0 flex items-center gap-2 text-slate-500 font-semibold text-lg whitespace-nowrap">
+          <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-sm font-black"
+               [style.background]="'hsl(' + ($index * 31 % 360) + ',65%,50%)'">
+            {{ c[0] }}
+          </div>
+          {{ c }}
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     HOW IT WORKS
+═══════════════════════════════════════════════════════════ -->
+<section class="bg-white py-24 px-6">
+  <div class="max-w-5xl mx-auto">
+
+    <div class="reveal text-center mb-16">
+      <span class="inline-block text-blue-600 font-bold text-sm uppercase tracking-widest mb-3">Simple Process</span>
+      <h2 class="text-4xl sm:text-5xl font-black text-slate-900">How It Works</h2>
+      <p class="text-slate-500 mt-4 max-w-xl mx-auto">Three steps between you and your next great role.</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
+      <!-- connector line (desktop) -->
+      <div class="hidden md:block absolute top-[3.5rem] left-[calc(16.67%+2rem)] right-[calc(16.67%+2rem)]
+                  h-0.5 bg-gradient-to-r from-blue-200 via-violet-300 to-blue-200"></div>
+
+      @for (step of steps; track step.n; let i = $index) {
+        <div class="step-card reveal bg-white border-2 border-slate-100 rounded-3xl p-8 text-center shadow-sm hover:border-blue-200"
+             [style.transition-delay]="i * 120 + 'ms'">
+          <div class="relative inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-6 text-3xl
+                      bg-gradient-to-br from-blue-500 to-violet-600 shadow-lg">
+            {{ step.icon }}
+            <span class="absolute -top-2 -right-2 w-6 h-6 bg-slate-900 text-white rounded-full
+                         text-[10px] font-black flex items-center justify-center shadow">
+              {{ step.n }}
+            </span>
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-3">{{ step.title }}</h3>
+          <p class="text-slate-500 text-sm leading-relaxed">{{ step.desc }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     FEATURED JOBS
+═══════════════════════════════════════════════════════════ -->
+<section class="bg-slate-50 py-24 px-6">
+  <div class="max-w-6xl mx-auto">
+
+    <div class="reveal flex flex-col sm:flex-row items-start sm:items-end justify-between gap-4 mb-12">
+      <div>
+        <span class="text-blue-600 font-bold text-sm uppercase tracking-widest">Live Openings</span>
+        <h2 class="text-4xl sm:text-5xl font-black text-slate-900 mt-1">Featured Jobs</h2>
+      </div>
+      <a routerLink="/jobs"
+         class="shrink-0 bg-slate-900 hover:bg-blue-600 text-white font-semibold px-6 py-3
+                rounded-xl transition-colors text-sm">
+        View All Jobs →
+      </a>
+    </div>
+
+    @if (featuredJobs().length === 0) {
+      <div class="reveal grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        @for (n of [1,2,3,4,5,6]; track n) {
+          <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 animate-pulse">
+            <div class="w-10 h-10 bg-slate-200 rounded-xl mb-4"></div>
+            <div class="h-4 bg-slate-200 rounded w-3/4 mb-2"></div>
+            <div class="h-3 bg-slate-100 rounded w-1/2 mb-4"></div>
+            <div class="h-3 bg-slate-100 rounded w-full mb-2"></div>
+            <div class="h-3 bg-slate-100 rounded w-4/5"></div>
+          </div>
+        }
+      </div>
+    } @else {
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        @for (job of featuredJobs(); track job.id; let i = $index) {
+          <div class="job-card reveal bg-white rounded-2xl p-6 shadow-sm border-2 border-slate-100"
+               [style.transition-delay]="i * 80 + 'ms'"
+               [routerLink]="['/jobs', job.id]">
+
+            <!-- Company avatar -->
+            <div class="flex items-start justify-between mb-5">
+              <div class="w-12 h-12 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-md"
+                   [style.background]="'hsl(' + (i * 47 % 360) + ',65%,48%)'">
+                {{ (job.title || 'J')[0].toUpperCase() }}
+              </div>
+              <span class="tag-pill bg-green-100 text-green-700">● Active</span>
+            </div>
+
+            <!-- Title & location -->
+            <h3 class="text-lg font-bold text-slate-900 leading-snug mb-1 line-clamp-2">{{ job.title }}</h3>
+            <p class="text-slate-500 text-sm mb-4 flex items-center gap-1">
+              <svg class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+              </svg>
+              {{ job.location || 'Remote' }}
+            </p>
+
+            <!-- Tags -->
+            <div class="flex flex-wrap gap-2 mb-5">
+              <span class="tag-pill bg-blue-100 text-blue-700">{{ jobTypeLabel(job.type) }}</span>
+              @if (job.requiredSkills && job.requiredSkills.length > 0) {
+                @for (skill of job.requiredSkills.slice(0,2); track skill) {
+                  <span class="tag-pill bg-slate-100 text-slate-600">{{ skill }}</span>
+                }
+              }
+            </div>
+
+            <!-- Salary + CTA -->
+            <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+              <div>
+                <p class="text-xs text-slate-400 mb-0.5">Salary Range</p>
+                <p class="text-base font-black text-blue-600">
+                  {{ fmt(job.salaryMin) }} – {{ fmt(job.salaryMax) }}
+                  <span class="text-slate-400 text-xs font-normal">/yr</span>
+                </p>
+              </div>
+              <span class="text-blue-600 hover:text-blue-800 text-sm font-semibold transition-colors">
+                Apply →
+              </span>
+            </div>
+          </div>
+        }
+      </div>
+    }
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     WHY TALENTBRIDGE
+═══════════════════════════════════════════════════════════ -->
+<section class="bg-white py-24 px-6">
+  <div class="max-w-5xl mx-auto">
+
+    <div class="reveal text-center mb-16">
+      <span class="text-blue-600 font-bold text-sm uppercase tracking-widest">Why Us</span>
+      <h2 class="text-4xl sm:text-5xl font-black text-slate-900 mt-1">Built for Modern Hiring</h2>
+      <p class="text-slate-500 mt-4 max-w-xl mx-auto">
+        Enterprise-grade technology made accessible for every candidate and every company.
+      </p>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      @for (f of features; track f.title; let i = $index) {
+        <div class="feat-card reveal border-2 rounded-3xl p-8" [class]="f.bg + ' ' + f.border"
+             [style.transition-delay]="i * 100 + 'ms'">
+          <div class="w-14 h-14 rounded-2xl flex items-center justify-center text-2xl mb-5 shadow-md text-white"
+               [class]="'bg-gradient-to-br ' + f.grad">
+            {{ f.icon }}
+          </div>
+          <h3 class="text-xl font-bold text-slate-900 mb-2">{{ f.title }}</h3>
+          <p class="text-slate-600 text-sm leading-relaxed">{{ f.desc }}</p>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     TESTIMONIALS
+═══════════════════════════════════════════════════════════ -->
+<section class="bg-slate-50 py-24 px-6">
+  <div class="max-w-5xl mx-auto">
+
+    <div class="reveal text-center mb-14">
+      <span class="text-blue-600 font-bold text-sm uppercase tracking-widest">Stories</span>
+      <h2 class="text-4xl sm:text-5xl font-black text-slate-900 mt-1">What People Say</h2>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      @for (t of testimonials; track t.name; let i = $index) {
+        <div class="reveal bg-white rounded-3xl p-8 shadow-sm border border-slate-100"
+             [style.transition-delay]="i * 110 + 'ms'">
+          <!-- Stars -->
+          <div class="flex gap-0.5 mb-5">
+            @for (s of [1,2,3,4,5]; track s) {
+              <svg class="w-4 h-4 text-yellow-400 fill-current" viewBox="0 0 24 24">
+                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+              </svg>
+            }
+          </div>
+          <p class="text-slate-600 text-sm leading-relaxed mb-6 italic">"{{ t.text }}"</p>
+          <div class="flex items-center gap-3">
+            <div [class]="t.color + ' w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0'">
+              {{ t.avatar }}
+            </div>
+            <div>
+              <p class="font-bold text-slate-900 text-sm">{{ t.name }}</p>
+              <p class="text-slate-500 text-xs">{{ t.role }} · {{ t.company }}</p>
+            </div>
+          </div>
+        </div>
+      }
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     DUAL CTA — CANDIDATES & HR
+═══════════════════════════════════════════════════════════ -->
+<section class="py-24 px-6 overflow-hidden relative"
+         style="background: linear-gradient(135deg, #1e3a5f 0%, #1e1b4b 50%, #312e81 100%)">
+  <div class="blob-1 absolute top-[-60px] left-[-60px] w-72 h-72 rounded-full opacity-20"
+       style="background: radial-gradient(circle, #60a5fa, #a78bfa)"></div>
+  <div class="blob-2 absolute bottom-[-60px] right-[-60px] w-64 h-64 rounded-full opacity-20"
+       style="background: radial-gradient(circle, #34d399, #06b6d4)"></div>
+
+  <div class="max-w-4xl mx-auto relative z-10">
+    <div class="reveal text-center mb-14">
+      <h2 class="text-4xl sm:text-5xl font-black text-white leading-tight mb-4">
+        Ready to Get Started?
+      </h2>
+      <p class="text-indigo-200 text-lg max-w-xl mx-auto">
+        Whether you're looking for your next role or building your dream team — TalentBridge has you covered.
+      </p>
+    </div>
+
+    <div class="reveal grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+      <!-- Candidate CTA -->
+      <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 text-center">
+        <div class="text-5xl mb-4">🎓</div>
+        <h3 class="text-2xl font-black text-white mb-2">I'm a Candidate</h3>
+        <p class="text-indigo-200 text-sm mb-6">
+          Create your profile, upload your resume, and apply to hundreds of verified openings.
+        </p>
+        <a routerLink="/auth/register"
+           class="inline-block bg-white text-indigo-700 font-bold px-8 py-3 rounded-xl
+                  hover:bg-indigo-50 transition-colors text-sm shadow-lg">
+          Create Free Account →
+        </a>
+      </div>
+
+      <!-- HR CTA -->
+      <div class="bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl p-8 text-center">
+        <div class="text-5xl mb-4">🏢</div>
+        <h3 class="text-2xl font-black text-white mb-2">I'm Hiring</h3>
+        <p class="text-indigo-200 text-sm mb-6">
+          Post jobs, review applications, and find your next great hire — all in one place.
+        </p>
+        <a routerLink="/auth/register"
+           class="inline-block bg-blue-500 hover:bg-blue-400 text-white font-bold px-8 py-3
+                  rounded-xl transition-colors text-sm shadow-lg">
+          Post a Job Free →
+        </a>
+      </div>
+
+    </div>
+
+    <!-- Bottom login link -->
+    <p class="reveal text-center text-indigo-300 text-sm mt-10">
+      Already have an account?
+      <a routerLink="/auth/login" class="text-white font-semibold hover:underline ml-1">Sign in →</a>
+    </p>
+  </div>
+</section>

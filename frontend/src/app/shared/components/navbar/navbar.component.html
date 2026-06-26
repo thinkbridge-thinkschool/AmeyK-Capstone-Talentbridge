@@ -4,7 +4,7 @@
 
       <!-- Logo -->
       <div class="flex items-center">
-        <a routerLink="/jobs" class="flex items-center gap-2 text-white font-bold text-xl hover:text-blue-300 transition-colors">
+        <a routerLink="/" class="flex items-center gap-2 text-white font-bold text-xl hover:text-blue-300 transition-colors">
           <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
@@ -15,6 +15,10 @@
 
       <!-- Desktop nav links -->
       <div class="hidden md:flex items-center gap-6">
+        <a routerLink="/" routerLinkActive="text-blue-300 border-b-2 border-blue-400" [routerLinkActiveOptions]="{exact: true}"
+           class="text-slate-300 hover:text-white transition-colors text-sm font-medium pb-0.5">
+          Home
+        </a>
         <a routerLink="/jobs" routerLinkActive="text-blue-300 border-b-2 border-blue-400"
            class="text-slate-300 hover:text-white transition-colors text-sm font-medium pb-0.5">
           Browse Jobs
@@ -117,6 +121,8 @@
     <!-- Mobile menu -->
     @if (mobileMenuOpen) {
       <div class="md:hidden pb-4 border-t border-slate-700 mt-2 pt-4 space-y-2">
+        <a routerLink="/" (click)="mobileMenuOpen=false"
+           class="block text-slate-300 hover:text-white py-2 text-sm font-medium">Home</a>
         <a routerLink="/jobs" (click)="mobileMenuOpen=false"
            class="block text-slate-300 hover:text-white py-2 text-sm font-medium">Browse Jobs</a>
         @if (currentUser) {
