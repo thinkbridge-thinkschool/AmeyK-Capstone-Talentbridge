@@ -27,7 +27,7 @@ export class JobListComponent implements OnInit {
 
   searchForm!: FormGroup;
   currentPage = 1;
-  pageSize = 10;
+  pageSize = 9;
 
   UserRole = UserRole;
   skeletonItems = [1, 2, 3, 4, 5, 6];

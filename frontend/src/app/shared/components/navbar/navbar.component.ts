@@ -18,13 +18,27 @@ export class NavbarComponent implements OnInit {
   currentUser: CurrentUser | null = null;
   mobileMenuOpen = false;
   unreadCount = 0;
+  isDark = false;
   UserRole = UserRole;
 
   ngOnInit(): void {
+    this.isDark = localStorage.getItem('tb_theme') === 'dark';
+    this.applyTheme();
+
     this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
       if (user) this.loadUnreadCount();
     });
+  }
+
+  toggleTheme(): void {
+    this.isDark = !this.isDark;
+    localStorage.setItem('tb_theme', this.isDark ? 'dark' : 'light');
+    this.applyTheme();
+  }
+
+  private applyTheme(): void {
+    document.documentElement.setAttribute('data-theme', this.isDark ? 'dark' : 'light');
   }
 
   private loadUnreadCount(): void {

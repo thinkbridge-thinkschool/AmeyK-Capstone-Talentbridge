@@ -118,15 +118,17 @@
           </select>
         </div>
 
-        <!-- Role info boxes -->
+        <!-- Role info boxes — clickable -->
         <div class="grid grid-cols-2 gap-3">
-          <div class="p-3 rounded-lg border-2 transition-colors"
-            [class]="form.value.role == 0 ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'">
+          <div class="p-3 rounded-lg border-2 transition-colors cursor-pointer select-none"
+            [class]="form.value.role == roles[0].value ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50 hover:border-blue-300'"
+            (click)="form.get('role')?.setValue(roles[0].value)">
             <p class="text-xs font-semibold text-gray-700">Candidate</p>
             <p class="text-xs text-gray-500 mt-0.5">Browse &amp; apply for jobs</p>
           </div>
-          <div class="p-3 rounded-lg border-2 transition-colors"
-            [class]="form.value.role == 1 ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-gray-50'">
+          <div class="p-3 rounded-lg border-2 transition-colors cursor-pointer select-none"
+            [class]="form.value.role == roles[1].value ? 'border-purple-500 bg-purple-50' : 'border-gray-200 bg-gray-50 hover:border-purple-300'"
+            (click)="form.get('role')?.setValue(roles[1].value)">
             <p class="text-xs font-semibold text-gray-700">Company HR</p>
             <p class="text-xs text-gray-500 mt-0.5">Post &amp; manage job listings</p>
           </div>

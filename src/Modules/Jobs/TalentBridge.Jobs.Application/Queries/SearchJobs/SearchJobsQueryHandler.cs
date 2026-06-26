@@ -5,7 +5,7 @@ using TalentBridge.Jobs.Domain.Repositories;
 
 namespace TalentBridge.Jobs.Application.Queries.SearchJobs;
 
-public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, List<JobDto>>
+public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, PagedResult<JobDto>>
 {
     private readonly IJobRepository _repository;
     private readonly HybridCache _cache;
@@ -16,12 +16,12 @@ public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, List<JobD
         _cache = cache;
     }
 
-    public async Task<List<JobDto>> Handle(SearchJobsQuery request, CancellationToken cancellationToken)
+    public async Task<PagedResult<JobDto>> Handle(SearchJobsQuery request, CancellationToken cancellationToken)
     {
-        var cacheKey = $"jobs:search:{request.Keyword}:{request.Location}:{request.SalaryMin}:{request.SalaryMax}:{request.Page}:{request.Size}";
+        var allCacheKey = $"jobs:search:{request.Keyword}:{request.Location}:{request.SalaryMin}:{request.SalaryMax}";
 
-        var result = await _cache.GetOrCreateAsync(
-            cacheKey,
+        var allJobs = await _cache.GetOrCreateAsync(
+            allCacheKey,
             async ct =>
             {
                 var jobs = await _repository.SearchAsync(
@@ -53,6 +53,12 @@ public class SearchJobsQueryHandler : IRequestHandler<SearchJobsQuery, List<JobD
             tags: ["jobs"],
             cancellationToken: cancellationToken);
 
-        return result ?? [];
+        var all = allJobs ?? [];
+        var totalCount = all.Count;
+        var page = Math.Max(1, request.Page);
+        var size = Math.Max(1, request.Size);
+        var items = all.Skip((page - 1) * size).Take(size).ToList();
+
+        return new PagedResult<JobDto>(items, totalCount);
     }
 }

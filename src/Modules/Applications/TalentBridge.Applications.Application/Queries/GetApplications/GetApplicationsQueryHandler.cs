@@ -30,7 +30,9 @@ public class GetApplicationsQueryHandler : IRequestHandler<GetApplicationsQuery,
                 a.CoverLetter,
                 a.ResumeUrl,
                 a.SubmittedAtUtc,
-                a.LastUpdatedAtUtc))
+                a.LastUpdatedAtUtc,
+                a.MatchPercentage,
+                a.ReviewedByHRId))
             .ToListAsync(cancellationToken);
     }
 }

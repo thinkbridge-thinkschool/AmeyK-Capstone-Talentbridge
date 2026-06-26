@@ -52,4 +52,13 @@ public class LocalResumeStorageService : IResumeStorageService
             File.Delete(localPath);
         return Task.CompletedTask;
     }
+
+    public Task<ResumeAccessResult?> GenerateSasUrlAsync(string blobUrl, TimeSpan expiry, CancellationToken ct)
+    {
+        // Local: return the URL directly — no SAS needed
+        var fileName = Path.GetFileName(blobUrl);
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        var fileType = ext == ".pdf" ? "pdf" : "docx";
+        return Task.FromResult<ResumeAccessResult?>(new ResumeAccessResult(blobUrl, fileName, fileType));
+    }
 }

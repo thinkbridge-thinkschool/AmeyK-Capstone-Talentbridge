@@ -34,6 +34,10 @@ export class HrDashboardComponent implements OnInit {
     });
   }
 
+  get activeCount(): number { return this.myJobs.filter(j => j.status === 'Active').length; }
+  get draftCount(): number  { return this.myJobs.filter(j => j.status === 'Draft').length; }
+  get closedCount(): number { return this.myJobs.filter(j => j.status === 'Closed' || j.status === 'Expired').length; }
+
   statusClass(status: string): string {
     const map: Record<string, string> = {
       Draft: 'bg-gray-100 text-gray-600',

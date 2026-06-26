@@ -137,13 +137,13 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 0
             }));
 
-    // Auth policy: 5 requests per 15 minutes per IP — applied via [EnableRateLimiting("auth")]
+    // Auth policy: relaxed in dev (50/15 min); tighten to 5 before prod deploy
     options.AddPolicy("auth", context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
             factory: _ => new FixedWindowRateLimiterOptions
             {
-                PermitLimit = 5,
+                PermitLimit = builder.Environment.IsDevelopment() ? 50 : 5,
                 Window = TimeSpan.FromMinutes(15),
                 QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                 QueueLimit = 0

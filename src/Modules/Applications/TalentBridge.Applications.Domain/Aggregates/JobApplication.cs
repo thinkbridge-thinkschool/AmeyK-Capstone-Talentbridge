@@ -16,8 +16,14 @@ public class JobApplication : AggregateRoot
     public DateTime LastUpdatedAtUtc { get; private set; }
     public Guid? ReviewedByHRId { get; private set; }
     public string? ReviewNotes { get; private set; }
+    public decimal? MatchPercentage { get; private set; }
 
     private JobApplication() { }
+
+    public void SetMatchPercentage(decimal percentage)
+    {
+        MatchPercentage = Math.Clamp(Math.Round(percentage, 2), 0, 100);
+    }
 
     public static Result<JobApplication> Create(Guid candidateId, Guid jobId, string coverLetter, string resumeUrl)
     {

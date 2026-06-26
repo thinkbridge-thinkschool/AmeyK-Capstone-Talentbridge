@@ -9,4 +9,4 @@ public record SearchJobsQuery(
     int Page,
     int Size,
     decimal? SalaryMin = null,
-    decimal? SalaryMax = null) : IRequest<List<JobDto>>;
+    decimal? SalaryMax = null) : IRequest<PagedResult<JobDto>>;

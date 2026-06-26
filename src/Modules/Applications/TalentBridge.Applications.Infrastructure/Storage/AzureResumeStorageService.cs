@@ -1,5 +1,6 @@
 using Azure.Storage.Blobs;
 using Azure.Storage.Blobs.Models;
+using Azure.Storage.Sas;
 using Microsoft.Extensions.Logging;
 using TalentBridge.Applications.Application.Interfaces;
 
@@ -53,5 +54,33 @@ public class AzureResumeStorageService : IResumeStorageService
     {
         var blobClient = new BlobClient(new Uri(blobUrl));
         await blobClient.DeleteIfExistsAsync(cancellationToken: ct);
+    }
+
+    public async Task<ResumeAccessResult?> GenerateSasUrlAsync(string blobUrl, TimeSpan expiry, CancellationToken ct)
+    {
+        var blobUri = new Uri(blobUrl);
+        var containerClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+        var blobName = Uri.UnescapeDataString(blobUri.AbsolutePath).TrimStart('/').Replace($"{ContainerName}/", "");
+        var blobClient = containerClient.GetBlobClient(blobName);
+
+        if (!await blobClient.ExistsAsync(ct))
+            return null;
+
+        var sasBuilder = new BlobSasBuilder
+        {
+            BlobContainerName = ContainerName,
+            BlobName = blobName,
+            Resource = "b",
+            ExpiresOn = DateTimeOffset.UtcNow.Add(expiry)
+        };
+        sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+        var sasUri = blobClient.GenerateSasUri(sasBuilder);
+        var fileName = Path.GetFileName(blobName);
+        var ext = Path.GetExtension(fileName).ToLowerInvariant();
+        var fileType = ext == ".pdf" ? "pdf" : "docx";
+
+        _logger.LogInformation("[Storage] Generated SAS URL for blob {BlobName}, expires {Expiry}", blobName, sasBuilder.ExpiresOn);
+        return new ResumeAccessResult(sasUri.ToString(), fileName, fileType);
     }
 }
